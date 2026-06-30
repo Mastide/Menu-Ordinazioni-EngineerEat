@@ -8,6 +8,10 @@ const categories = [
   { itemsKey: "dessert_items", hideKey: "dessert", label: "Dessert" },
 ];
 
+function formatPrice(n) {
+  return `€ ${Number(n || 0).toFixed(2).replace(".", ",")}`;
+}
+
 function sendNotification(name) {
   if ("Notification" in window && Notification.permission === "granted") {
     new Notification("Nuovo ordine ricevuto", {
@@ -43,7 +47,7 @@ export default function App() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [newOrderCount, setNewOrderCount] = useState(0);
-  const [newItemText, setNewItemText] = useState({});
+  const [newItemInputs, setNewItemInputs] = useState({});
   const initialLoadDone = useRef(false);
 
   useEffect(() => {
@@ -157,12 +161,12 @@ export default function App() {
     setNewOrderCount(0);
   }
 
-  function toggleSelectItem(category, nome) {
+  function toggleSelectItem(category, nome, prezzo) {
     setOrderForm((f) => {
       const exists = f.selectedItems.some((i) => i.category === category && i.nome === nome);
       const selectedItems = exists
         ? f.selectedItems.filter((i) => !(i.category === category && i.nome === nome))
-        : [...f.selectedItems, { category, nome }];
+        : [...f.selectedItems, { category, nome, prezzo }];
       return { ...f, selectedItems };
     });
   }
@@ -170,6 +174,8 @@ export default function App() {
   function isSelected(category, nome) {
     return orderForm.selectedItems.some((i) => i.category === category && i.nome === nome);
   }
+
+  const orderTotal = orderForm.selectedItems.reduce((s, i) => s + Number(i.prezzo || 0), 0);
 
   async function handleOrder() {
     if (!orderForm.name.trim()) return;
@@ -219,11 +225,13 @@ export default function App() {
 
   async function addItem(dayId, itemsKey, currentItems) {
     const inputKey = `${dayId}_${itemsKey}`;
-    const text = (newItemText[inputKey] || "").trim();
-    if (!text) return;
-    const newItems = [...(currentItems || []), { nome: text, unavailable: false }];
+    const draft = newItemInputs[inputKey] || { nome: "", prezzo: "" };
+    const nome = (draft.nome || "").trim();
+    if (!nome) return;
+    const prezzo = parseFloat((draft.prezzo || "0").toString().replace(",", ".")) || 0;
+    const newItems = [...(currentItems || []), { nome, prezzo, unavailable: false }];
     await supabase.from("menu").update({ [itemsKey]: newItems }).eq("id", dayId);
-    setNewItemText((s) => ({ ...s, [inputKey]: "" }));
+    setNewItemInputs((s) => ({ ...s, [inputKey]: { nome: "", prezzo: "" } }));
     loadMenu();
   }
 
@@ -235,6 +243,13 @@ export default function App() {
 
   async function toggleItemUnavailable(dayId, itemsKey, currentItems, index) {
     const newItems = currentItems.map((it, i) => i === index ? { ...it, unavailable: !it.unavailable } : it);
+    await supabase.from("menu").update({ [itemsKey]: newItems }).eq("id", dayId);
+    loadMenu();
+  }
+
+  async function updateItemPrice(dayId, itemsKey, currentItems, index, newPrezzo) {
+    const prezzo = parseFloat((newPrezzo || "0").toString().replace(",", ".")) || 0;
+    const newItems = currentItems.map((it, i) => i === index ? { ...it, prezzo } : it);
     await supabase.from("menu").update({ [itemsKey]: newItems }).eq("id", dayId);
     loadMenu();
   }
@@ -279,6 +294,7 @@ export default function App() {
         input::placeholder, textarea::placeholder { color: #6b8aa8; }
         input:focus, textarea:focus { border-color: #ffffff; }
         input[type=checkbox] { width: auto; accent-color: #ffffff; transform: scale(1.2); cursor: pointer; }
+        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { opacity: 0.6; }
         .tag { display: inline-block; padding: 3px 10px; font-size: 11px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; border-radius: 2px; }
         .divider-line { height: 1px; background: rgba(255,255,255,0.2); margin: 28px 0; }
         .day-tab { padding: 8px 16px; font-family: 'Poppins', sans-serif; font-size: 13px; cursor: pointer; border: none; background: transparent; transition: all 0.2s; border-bottom: 2px solid transparent; color: #7f9cb8; }
@@ -290,7 +306,8 @@ export default function App() {
         .field-control-btn { border: none; padding: 4px 10px; font-family: 'Poppins', sans-serif; font-size: 10px; font-weight: 500; letter-spacing: 0.5px; cursor: pointer; transition: all 0.15s; border-radius: 2px; }
         .script-title { font-family: 'Dancing Script', cursive; font-weight: 700; color: #ffffff; }
         .card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); }
-        .item-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; margin-bottom: 4px; background: rgba(255,255,255,0.04); border-radius: 2px; }
+        .item-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; margin-bottom: 4px; background: rgba(255,255,255,0.04); border-radius: 2px; gap: 8px; }
+        .price-input { width: 64px !important; padding: 4px 6px !important; font-size: 12px !important; text-align: right; }
       `}</style>
 
       {/* Login modal */}
@@ -366,12 +383,17 @@ export default function App() {
                   const avail = availableItems(today, c.itemsKey);
                   return (
                     <div key={c.itemsKey} className="card" style={{ padding: "20px 24px" }}>
-                      <div style={{ fontSize: 10, fontFamily: "'Poppins', sans-serif", fontWeight: 600, letterSpacing: 2, color: "#7f9cb8", textTransform: "uppercase", marginBottom: 8 }}>{c.label}</div>
+                      <div style={{ fontSize: 10, fontFamily: "'Poppins', sans-serif", fontWeight: 600, letterSpacing: 2, color: "#7f9cb8", textTransform: "uppercase", marginBottom: 10 }}>{c.label}</div>
                       {avail.length === 0 ? (
                         <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: "#b08080", fontStyle: "italic" }}>Non disponibile</div>
                       ) : (
-                        <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 15, fontWeight: 500, color: "#fff", lineHeight: 1.6 }}>
-                          {avail.map((it) => it.nome).join(" · ")}
+                        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                          {avail.map((it) => (
+                            <div key={it.nome} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
+                              <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 15, fontWeight: 500, color: "#fff" }}>{it.nome}</span>
+                              <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: "#9bb8d3", whiteSpace: "nowrap" }}>{formatPrice(it.prezzo)}</span>
+                            </div>
+                          ))}
                         </div>
                       )}
                     </div>
@@ -399,12 +421,17 @@ export default function App() {
                     const avail = availableItems(menu[activeDay], c.itemsKey);
                     return (
                       <div key={c.itemsKey} className="card" style={{ padding: "14px 16px" }}>
-                        <div style={{ fontSize: 10, fontFamily: "'Poppins', sans-serif", letterSpacing: 1.5, color: "#7f9cb8", textTransform: "uppercase", marginBottom: 5 }}>{c.label}</div>
+                        <div style={{ fontSize: 10, fontFamily: "'Poppins', sans-serif", letterSpacing: 1.5, color: "#7f9cb8", textTransform: "uppercase", marginBottom: 6 }}>{c.label}</div>
                         {avail.length === 0 ? (
                           <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: "#b08080", fontStyle: "italic" }}>Non disponibile</div>
                         ) : (
-                          <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, fontWeight: 500, color: "#fff", lineHeight: 1.5 }}>
-                            {avail.map((it) => it.nome).join(", ")}
+                          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                            {avail.map((it) => (
+                              <div key={it.nome} style={{ display: "flex", justifyContent: "space-between", gap: 6 }}>
+                                <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, fontWeight: 500, color: "#fff" }}>{it.nome}</span>
+                                <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: "#9bb8d3", whiteSpace: "nowrap" }}>{formatPrice(it.prezzo)}</span>
+                              </div>
+                            ))}
                           </div>
                         )}
                       </div>
@@ -447,9 +474,12 @@ export default function App() {
                             <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, letterSpacing: 1.5, color: "#7f9cb8", textTransform: "uppercase", marginBottom: 8 }}>{c.label}</div>
                             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                               {avail.map((it) => (
-                                <label key={it.nome} style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer", fontFamily: "'Poppins', sans-serif", fontSize: 14 }}>
-                                  <input type="checkbox" checked={isSelected(c.label, it.nome)} onChange={() => toggleSelectItem(c.label, it.nome)} />
-                                  <span style={{ fontWeight: 500, color: "#fff" }}>{it.nome}</span>
+                                <label key={it.nome} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", fontFamily: "'Poppins', sans-serif", fontSize: 14 }}>
+                                  <span style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                                    <input type="checkbox" checked={isSelected(c.label, it.nome)} onChange={() => toggleSelectItem(c.label, it.nome, it.prezzo)} />
+                                    <span style={{ fontWeight: 500, color: "#fff" }}>{it.nome}</span>
+                                  </span>
+                                  <span style={{ color: "#9bb8d3", fontSize: 13 }}>{formatPrice(it.prezzo)}</span>
                                 </label>
                               ))}
                             </div>
@@ -458,6 +488,12 @@ export default function App() {
                       })}
                   </div>
                 </div>
+                {orderForm.selectedItems.length > 0 && (
+                  <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderTop: "1px solid rgba(255,255,255,0.15)", marginBottom: 16, fontFamily: "'Poppins', sans-serif" }}>
+                    <span style={{ fontSize: 13, color: "#9bb8d3" }}>Totale</span>
+                    <span style={{ fontSize: 16, fontWeight: 600, color: "#fff" }}>{formatPrice(orderTotal)}</span>
+                  </div>
+                )}
                 <div style={{ marginBottom: 22 }}>
                   <label style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, letterSpacing: 1, color: "#9bb8d3", textTransform: "uppercase", display: "block", marginBottom: 6 }}>Note (facoltativo)</label>
                   <textarea placeholder="Allergie, intolleranze, preferenze..." value={orderForm.note} onChange={(e) => setOrderForm((f) => ({ ...f, note: e.target.value }))} style={{ resize: "vertical", minHeight: 70, maxWidth: 400 }} />
@@ -487,41 +523,47 @@ export default function App() {
             {orders.length === 0 ? (
               <div className="card" style={{ padding: "24px", fontFamily: "'Poppins', sans-serif", color: "#7f9cb8", fontSize: 14 }}>Nessun ordine ancora.</div>
             ) : (
-              orders.map((o) => (
-                <div key={o.id} className="order-row fade-in">
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-                        <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: 15, color: "#fff" }}>{o.name}</span>
-                        <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: "#7f9cb8" }}>
-                          {new Date(o.created_at).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}
-                        </span>
+              orders.map((o) => {
+                const orderTot = (o.selected_items || []).reduce((s, i) => s + Number(i.prezzo || 0), 0);
+                return (
+                  <div key={o.id} className="order-row fade-in">
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+                          <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: 15, color: "#fff" }}>{o.name}</span>
+                          <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: "#7f9cb8" }}>
+                            {new Date(o.created_at).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}
+                          </span>
+                          {o.selected_items && o.selected_items.length > 0 && (
+                            <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: "#9bb8d3", marginLeft: "auto" }}>{formatPrice(orderTot)}</span>
+                          )}
+                        </div>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: o.note ? 8 : 0 }}>
+                          {(o.selected_items && o.selected_items.length > 0) ? (
+                            o.selected_items.map((it, idx) => (
+                              <span key={idx} className="tag" style={{ background: "rgba(255,255,255,0.12)", color: "#cfe0ee" }}>{it.category}: {it.nome} ({formatPrice(it.prezzo)})</span>
+                            ))
+                          ) : (
+                            <>
+                              {o.primo && <span className="tag" style={{ background: "rgba(255,255,255,0.12)", color: "#cfe0ee" }}>Primo</span>}
+                              {o.secondo && <span className="tag" style={{ background: "rgba(255,255,255,0.12)", color: "#cfe0ee" }}>Secondo</span>}
+                              {o.contorno && <span className="tag" style={{ background: "rgba(255,255,255,0.12)", color: "#cfe0ee" }}>Contorno</span>}
+                              {o.dessert && <span className="tag" style={{ background: "rgba(255,255,255,0.12)", color: "#cfe0ee" }}>Dessert</span>}
+                            </>
+                          )}
+                        </div>
+                        {o.note && <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: "#7f9cb8", fontStyle: "italic" }}>"{o.note}"</div>}
                       </div>
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: o.note ? 8 : 0 }}>
-                        {(o.selected_items && o.selected_items.length > 0) ? (
-                          o.selected_items.map((it, idx) => (
-                            <span key={idx} className="tag" style={{ background: "rgba(255,255,255,0.12)", color: "#cfe0ee" }}>{it.category}: {it.nome}</span>
-                          ))
-                        ) : (
-                          <>
-                            {o.primo && <span className="tag" style={{ background: "rgba(255,255,255,0.12)", color: "#cfe0ee" }}>Primo</span>}
-                            {o.secondo && <span className="tag" style={{ background: "rgba(255,255,255,0.12)", color: "#cfe0ee" }}>Secondo</span>}
-                            {o.contorno && <span className="tag" style={{ background: "rgba(255,255,255,0.12)", color: "#cfe0ee" }}>Contorno</span>}
-                            {o.dessert && <span className="tag" style={{ background: "rgba(255,255,255,0.12)", color: "#cfe0ee" }}>Dessert</span>}
-                          </>
-                        )}
-                      </div>
-                      {o.note && <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: "#7f9cb8", fontStyle: "italic" }}>"{o.note}"</div>}
+                      <button className="btn-danger" onClick={() => deleteOrder(o.id)} style={{ flexShrink: 0, fontSize: 12, padding: "6px 14px" }}>Rimuovi</button>
                     </div>
-                    <button className="btn-danger" onClick={() => deleteOrder(o.id)} style={{ flexShrink: 0, fontSize: 12, padding: "6px 14px" }}>Rimuovi</button>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
 
             <div className="divider-line" />
             <h3 className="script-title" style={{ fontSize: 24, marginBottom: 4 }}>Gestione menù settimanale</h3>
-            <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: "#7f9cb8", marginBottom: 16 }}>Aggiungi quanti piatti vuoi per ogni categoria, segnali come non disponibili o eliminali.</p>
+            <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: "#7f9cb8", marginBottom: 16 }}>Aggiungi quanti piatti vuoi per ogni categoria, con prezzo, e segnali come non disponibili o eliminali.</p>
 
             {menu.map((day) => (
               <div key={day.id} className="card" style={{ padding: "18px 20px", marginBottom: 14, borderLeft: `3px solid ${day.is_today ? "#fff" : "rgba(255,255,255,0.2)"}` }}>
@@ -564,6 +606,7 @@ export default function App() {
                     const items = day[c.itemsKey] || [];
                     const isHidden = (day.hidden_fields || []).includes(c.hideKey);
                     const inputKey = `${day.id}_${c.itemsKey}`;
+                    const draft = newItemInputs[inputKey] || { nome: "", prezzo: "" };
                     return (
                       <div key={c.itemsKey} style={{ background: "rgba(255,255,255,0.03)", padding: "12px 14px", opacity: isHidden ? 0.5 : 1 }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
@@ -579,9 +622,17 @@ export default function App() {
 
                         {items.map((it, idx) => (
                           <div key={idx} className="item-row">
-                            <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: it.unavailable ? "#6b7d8e" : "#fff", textDecoration: it.unavailable ? "line-through" : "none" }}>
+                            <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: it.unavailable ? "#6b7d8e" : "#fff", textDecoration: it.unavailable ? "line-through" : "none", flex: 1 }}>
                               {it.nome}
                             </span>
+                            <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: "#7f9cb8" }}>€</span>
+                            <input
+                              type="text"
+                              inputMode="decimal"
+                              className="price-input"
+                              defaultValue={Number(it.prezzo || 0).toFixed(2)}
+                              onBlur={(e) => updateItemPrice(day.id, c.itemsKey, items, idx, e.target.value)}
+                            />
                             <div style={{ display: "flex", gap: 4 }}>
                               <button className="field-control-btn" onClick={() => toggleItemUnavailable(day.id, c.itemsKey, items, idx)} style={{ background: it.unavailable ? "rgba(90,154,106,0.2)" : "rgba(192,160,80,0.2)", color: it.unavailable ? "#8fcf9f" : "#d8be7a" }}>
                                 {it.unavailable ? "Disponibile" : "Esaurito"}
@@ -596,12 +647,19 @@ export default function App() {
                         <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
                           <input
                             placeholder="Nuovo piatto..."
-                            value={newItemText[inputKey] || ""}
-                            onChange={(e) => setNewItemText((s) => ({ ...s, [inputKey]: e.target.value }))}
-                            onKeyDown={(e) => e.key === "Enter" && addItem(day.id, c.itemsKey, items)}
-                            style={{ fontSize: 12, padding: "7px 10px" }}
+                            value={draft.nome}
+                            onChange={(e) => setNewItemInputs((s) => ({ ...s, [inputKey]: { ...draft, nome: e.target.value } }))}
+                            style={{ fontSize: 12, padding: "7px 10px", flex: 2 }}
                           />
-                          <button className="btn-ghost" style={{ fontSize: 11, padding: "7px 14px", whiteSpace: "nowrap" }} onClick={() => addItem(day.id, c.itemsKey, items)}>
+                          <input
+                            placeholder="€"
+                            inputMode="decimal"
+                            value={draft.prezzo}
+                            onChange={(e) => setNewItemInputs((s) => ({ ...s, [inputKey]: { ...draft, prezzo: e.target.value } }))}
+                            onKeyDown={(e) => e.key === "Enter" && addItem(day.id, c.itemsKey, items)}
+                            style={{ fontSize: 12, padding: "7px 10px", flex: 1, textAlign: "right" }}
+                          />
+                          <button className="btn-ghost" style={{ fontSize: 11, padding: "7px 12px", whiteSpace: "nowrap" }} onClick={() => addItem(day.id, c.itemsKey, items)}>
                             + Aggiungi
                           </button>
                         </div>
