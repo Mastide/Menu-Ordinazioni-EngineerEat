@@ -164,9 +164,15 @@ export default function App() {
   function toggleSelectItem(category, nome, prezzo) {
     setOrderForm((f) => {
       const exists = f.selectedItems.some((i) => i.category === category && i.nome === nome);
-      const selectedItems = exists
+      let selectedItems = exists
         ? f.selectedItems.filter((i) => !(i.category === category && i.nome === nome))
         : [...f.selectedItems, { category, nome, prezzo }];
+
+      // Il contorno è selezionabile solo se è stato scelto almeno un secondo
+      const stillHasSecondo = selectedItems.some((i) => i.category === "Secondi");
+      if (!stillHasSecondo) {
+        selectedItems = selectedItems.filter((i) => i.category !== "Contorni");
+      }
       return { ...f, selectedItems };
     });
   }
@@ -469,14 +475,20 @@ export default function App() {
                       .map((c) => {
                         const avail = availableItems(today, c.itemsKey);
                         if (avail.length === 0) return null;
+                        const isContorni = c.label === "Contorni";
+                        const hasSecondo = orderForm.selectedItems.some((i) => i.category === "Secondi");
+                        const locked = isContorni && !hasSecondo;
                         return (
                           <div key={c.itemsKey}>
                             <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, letterSpacing: 1.5, color: "#7f9cb8", textTransform: "uppercase", marginBottom: 8 }}>{c.label}</div>
+                            {locked && (
+                              <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: "#7f9cb8", fontStyle: "italic", marginBottom: 8 }}>Seleziona un secondo per poter scegliere il contorno</div>
+                            )}
                             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                               {avail.map((it) => (
-                                <label key={it.nome} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", fontFamily: "'Poppins', sans-serif", fontSize: 14 }}>
+                                <label key={it.nome} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: locked ? "not-allowed" : "pointer", fontFamily: "'Poppins', sans-serif", fontSize: 14, opacity: locked ? 0.4 : 1 }}>
                                   <span style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                                    <input type="checkbox" checked={isSelected(c.label, it.nome)} onChange={() => toggleSelectItem(c.label, it.nome, it.prezzo)} />
+                                    <input type="checkbox" checked={isSelected(c.label, it.nome)} disabled={locked} onChange={() => toggleSelectItem(c.label, it.nome, it.prezzo)} />
                                     <span style={{ fontWeight: 500, color: "#fff" }}>{it.nome}</span>
                                   </span>
                                   <span style={{ color: "#9bb8d3", fontSize: 13 }}>{formatPrice(it.prezzo)}</span>
