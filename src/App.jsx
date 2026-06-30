@@ -314,6 +314,25 @@ export default function App() {
         .card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); }
         .item-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; margin-bottom: 4px; background: rgba(255,255,255,0.04); border-radius: 2px; gap: 8px; }
         .price-input { width: 64px !important; padding: 4px 6px !important; font-size: 12px !important; text-align: right; }
+
+        .app-main { padding: 40px 24px; }
+        .app-header-inner { padding: 0 32px; }
+        .hero-title { font-size: 48px; }
+        .menu-today-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+        .menu-week-grid { grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        .admin-cat-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+        .header-nav-btn-text { display: inline; }
+
+        @media (max-width: 640px) {
+          .app-main { padding: 24px 14px; }
+          .app-header-inner { padding: 0 16px; height: auto !important; flex-wrap: wrap; gap: 10px; padding-top: 10px; padding-bottom: 10px; }
+          .hero-title { font-size: 32px !important; }
+          .menu-today-grid { grid-template-columns: 1fr; }
+          .menu-week-grid { grid-template-columns: repeat(2, 1fr); }
+          .admin-cat-grid { grid-template-columns: 1fr; }
+          .item-row { flex-wrap: wrap; }
+          .order-card-padding { padding: 20px 18px !important; }
+        }
       `}</style>
 
       {/* Login modal */}
@@ -340,8 +359,8 @@ export default function App() {
       )}
 
       {/* Header */}
-      <header style={{ padding: "0 32px", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
-        <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: 64 }}>
+      <header style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+        <div className="app-header-inner" style={{ maxWidth: 900, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: 64 }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
             <h1 className="script-title" style={{ fontSize: 26 }}>EngineerEat</h1>
             <span style={{ color: "#7f9cb8", fontSize: 11, letterSpacing: 2 }}>ORDINAZIONI</span>
@@ -370,7 +389,7 @@ export default function App() {
 
       {suspended && <div className="suspended-banner">ORDINAZIONI SOSPESE — La cucina non accetta nuove prenotazioni al momento</div>}
 
-      <main style={{ maxWidth: 900, margin: "0 auto", padding: "40px 24px" }}>
+      <main className="app-main" style={{ maxWidth: 900, margin: "0 auto" }}>
 
         {/* CLIENT VIEW */}
         {view === "client" && today && (
@@ -383,10 +402,10 @@ export default function App() {
               <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, letterSpacing: 3, color: "#7f9cb8", textTransform: "uppercase" }}>
                 {today.day} · {today.date}
               </span>
-              <h2 className="script-title" style={{ fontSize: 48, marginTop: 6 }}>Menù del giorno</h2>
+              <h2 className="script-title hero-title" style={{ marginTop: 6 }}>Menù del giorno</h2>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 14, marginBottom: 40 }}>
+            <div className="menu-today-grid" style={{ display: "grid", marginBottom: 40 }}>
               {categories
                 .filter((c) => !(today.hidden_fields || []).includes(c.hideKey))
                 .map((c) => {
@@ -424,7 +443,7 @@ export default function App() {
             </div>
 
             {menu[activeDay] && (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 40 }}>
+              <div className="menu-week-grid" style={{ display: "grid", marginBottom: 40 }}>
                 {categories
                   .filter((c) => !(menu[activeDay].hidden_fields || []).includes(c.hideKey))
                   .map((c) => {
@@ -466,7 +485,7 @@ export default function App() {
                 <button className="btn-ghost" style={{ marginTop: 16, fontSize: 12 }} onClick={() => setOrderSent(false)}>Nuovo ordine</button>
               </div>
             ) : (
-              <div className="card" style={{ padding: "28px 32px", marginTop: 16 }}>
+              <div className="card order-card-padding" style={{ padding: "28px 32px", marginTop: 16 }}>
                 <div style={{ marginBottom: 16 }}>
                   <label style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, letterSpacing: 1, color: "#9bb8d3", textTransform: "uppercase", display: "block", marginBottom: 6 }}>Nome e cognome *</label>
                   <input placeholder="Es. Marco Bianchi" value={orderForm.name} onChange={(e) => setOrderForm((f) => ({ ...f, name: e.target.value }))} style={{ maxWidth: 320 }} />
@@ -620,7 +639,7 @@ export default function App() {
                 )}
 
                 {/* Categorie con liste di piatti */}
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 14 }}>
+                <div className="admin-cat-grid" style={{ display: "grid" }}>
                   {categories.map((c) => {
                     const items = day[c.itemsKey] || [];
                     const isHidden = (day.hidden_fields || []).includes(c.hideKey);
