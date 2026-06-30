@@ -427,20 +427,49 @@ export default function App() {
               </div>
             )}
 
-            {/* Decorazione line-art: forchetta, coltello e piatto con cuore di vapore */}
-            <div style={{ display: "flex", justifyContent: "center", marginTop: 56, opacity: 0.85 }}>
-              <svg width="220" height="130" viewBox="0 0 220 130" fill="none" xmlns="http://www.w3.org/2000/svg">
-                {/* Cuore di vapore */}
-                <path d="M110 8 C100 18, 100 28, 110 34 C120 40, 108 46, 110 56" stroke="white" strokeWidth="1.6" fill="none" strokeLinecap="round"/>
-                <path d="M110 8 C113 2, 122 2, 124 10 C126 18, 116 22, 110 30" stroke="white" strokeWidth="1.6" fill="none" strokeLinecap="round"/>
-                {/* Piatto */}
-                <ellipse cx="110" cy="92" rx="64" ry="20" stroke="white" strokeWidth="1.6" fill="none"/>
-                <ellipse cx="110" cy="90" rx="38" ry="11" stroke="white" strokeWidth="1.3" fill="none" opacity="0.7"/>
-                {/* Forchetta */}
-                <path d="M44 56 L44 78 M40 56 L40 66 M48 56 L48 66 M44 78 L44 110" stroke="white" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M40 56 C40 50, 44 50, 44 56 M48 56 C48 50, 44 50, 44 56" stroke="white" strokeWidth="1.6" fill="none"/>
-                {/* Coltello */}
-                <path d="M176 50 C170 52, 168 60, 172 70 L176 80 L176 112" stroke="white" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+            {/* Decorazione line-art: piatto con cuore di vapore, forchetta e coltello */}
+            <div style={{ display: "flex", justifyContent: "center", marginTop: 60, opacity: 0.9 }}>
+              <svg width="320" height="210" viewBox="0 0 320 210" fill="none" xmlns="http://www.w3.org/2000/svg">
+                {/* Cuore di vapore che sale dal piatto, un unico tratto fluido */}
+                <path
+                  d="M160 18
+                     C 148 26, 146 38, 156 46
+                     C 164 52, 158 60, 160 70
+                     C 162 60, 156 52, 164 46
+                     C 174 38, 172 26, 160 18 Z"
+                  stroke="white" strokeWidth="2" fill="none" strokeLinejoin="round" strokeLinecap="round"
+                />
+                <path d="M160 70 C 160 80, 160 86, 160 92" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round"/>
+
+                {/* Piatto ellittico a doppio bordo */}
+                <ellipse cx="160" cy="128" rx="92" ry="28" stroke="white" strokeWidth="2" fill="none"/>
+                <ellipse cx="160" cy="125" rx="54" ry="15" stroke="white" strokeWidth="1.4" fill="none" opacity="0.65"/>
+
+                {/* Forchetta — linea continua, rebbi arrotondati */}
+                <path
+                  d="M56 70
+                     L56 100
+                     C 56 108, 64 112, 70 108
+                     L 70 160
+                     M48 70 L48 92
+                     M64 70 L64 92
+                     M56 70 L56 92"
+                  stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"
+                />
+                <path d="M48 70 C 48 60, 56 60, 56 70 M64 70 C 64 60, 56 60, 56 70" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round"/>
+
+                {/* Coltello — lama affusolata e manico */}
+                <path
+                  d="M258 64
+                     C 246 68, 240 80, 246 96
+                     L 252 112
+                     C 254 118, 254 124, 254 130
+                     L 254 168"
+                  stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"
+                />
+
+                {/* Filo decorativo che collega gli elementi, come nel menù fisico */}
+                <path d="M70 160 C 110 178, 210 178, 254 168" stroke="white" strokeWidth="1.2" fill="none" strokeLinecap="round" opacity="0.5"/>
               </svg>
             </div>
           </div>
