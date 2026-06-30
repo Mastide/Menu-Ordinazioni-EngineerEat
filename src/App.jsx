@@ -9,13 +9,11 @@ const fields = [
 ];
 
 function sendNotification(name) {
-  // Notifica browser desktop
   if ("Notification" in window && Notification.permission === "granted") {
     new Notification("Nuovo ordine ricevuto", {
       body: `${name} ha appena prenotato`,
     });
   }
-  // Notifica push ntfy (telefono)
   fetch("https://ntfy.sh/Ordini_Mensa_Antonio_PlusFast", {
     method: "POST",
     headers: {
@@ -108,7 +106,6 @@ export default function App() {
     return () => supabase.removeChannel(channel);
   }, []);
 
-  // Realtime menu (per aggiornare disponibilità in tempo reale)
   useEffect(() => {
     const channel = supabase
       .channel("menu-realtime")
@@ -214,17 +211,12 @@ export default function App() {
   }
 
   async function toggleFieldVisibility(dayId, fieldKey, currentHidden, currentUnavailable, action) {
-    // action: 'hide' | 'unavailable' | 'restore'
     let newHidden = [...(currentHidden || [])];
     let newUnavailable = [...(currentUnavailable || [])];
-
-    // Prima rimuovi da entrambi
     newHidden = newHidden.filter(f => f !== fieldKey);
     newUnavailable = newUnavailable.filter(f => f !== fieldKey);
-
     if (action === "hide") newHidden.push(fieldKey);
     if (action === "unavailable") newUnavailable.push(fieldKey);
-
     await supabase.from("menu").update({
       hidden_fields: newHidden,
       unavailable_fields: newUnavailable,
@@ -239,55 +231,58 @@ export default function App() {
 
   if (loading) {
     return (
-      <div style={{ fontFamily: "'DM Sans', sans-serif", minHeight: "100vh", background: "#f5f0e8", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ color: "#888", fontSize: 14, letterSpacing: 1 }}>Caricamento...</div>
+      <div style={{ fontFamily: "'Poppins', sans-serif", minHeight: "100vh", background: "#1c3c5e", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ color: "#9bb8d3", fontSize: 14, letterSpacing: 1 }}>Caricamento...</div>
       </div>
     );
   }
 
   return (
-    <div style={{ fontFamily: "'Georgia', serif", minHeight: "100vh", background: "#f5f0e8" }}>
+    <div style={{ fontFamily: "'Poppins', sans-serif", minHeight: "100vh", background: "linear-gradient(180deg, #1c3c5e 0%, #16314f 100%)" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@500;700&family=Poppins:wght@300;400;500;600;700&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
         .fade-in { animation: fadeIn 0.4s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        .btn-primary { background: #2c2c2c; color: #f5f0e8; border: none; padding: 12px 28px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; letter-spacing: 0.5px; transition: all 0.2s; }
-        .btn-primary:hover { background: #444; }
-        .btn-primary:disabled { background: #aaa; cursor: not-allowed; }
-        .btn-danger { background: #8b2020; color: white; border: none; padding: 8px 18px; font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; transition: all 0.2s; }
-        .btn-danger:hover { background: #a02828; }
-        .btn-ghost { background: transparent; border: 1.5px solid #2c2c2c; color: #2c2c2c; padding: 10px 24px; font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; transition: all 0.2s; }
-        .btn-ghost:hover { background: #2c2c2c; color: #f5f0e8; }
-        input, textarea { font-family: 'DM Sans', sans-serif; border: 1.5px solid #d4cfc4; background: white; padding: 10px 14px; font-size: 14px; outline: none; transition: border 0.2s; width: 100%; }
-        input:focus, textarea:focus { border-color: #8b6914; }
-        input[type=checkbox] { width: auto; accent-color: #8b6914; transform: scale(1.2); cursor: pointer; }
-        .tag { display: inline-block; padding: 3px 10px; font-size: 11px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; }
-        .divider { height: 1px; background: #d4cfc4; margin: 24px 0; }
-        .day-tab { padding: 8px 16px; font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; border: none; background: transparent; transition: all 0.2s; border-bottom: 2px solid transparent; color: #888; }
-        .day-tab.active { color: #2c2c2c; border-bottom: 2px solid #8b6914; font-weight: 500; }
-        .day-tab:hover:not(.active) { color: #555; }
-        .order-row { background: white; padding: 14px 18px; margin-bottom: 10px; border-left: 3px solid #8b6914; }
-        .suspended-banner { background: #8b2020; color: white; text-align: center; padding: 12px; font-family: 'DM Sans', sans-serif; font-size: 13px; letter-spacing: 0.5px; }
-        .badge { background: #8b6914; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: inline-flex; align-items: center; justify-content: center; margin-left: 6px; font-family: 'DM Sans', sans-serif; }
-        .field-control-btn { border: none; padding: 4px 10px; font-family: 'DM Sans', sans-serif; font-size: 10px; font-weight: 500; letter-spacing: 0.5px; cursor: pointer; transition: all 0.15s; }
+        .btn-primary { background: #ffffff; color: #1c3c5e; border: none; padding: 13px 28px; font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; letter-spacing: 0.5px; transition: all 0.2s; border-radius: 2px; }
+        .btn-primary:hover { background: #e8eef4; }
+        .btn-primary:disabled { background: #6b8aa8; color: #cdd9e4; cursor: not-allowed; }
+        .btn-danger { background: rgba(180,70,70,0.25); color: #f0a0a0; border: 1px solid rgba(180,70,70,0.4); padding: 8px 18px; font-family: 'Poppins', sans-serif; font-size: 13px; cursor: pointer; transition: all 0.2s; border-radius: 2px; }
+        .btn-danger:hover { background: rgba(180,70,70,0.4); }
+        .btn-ghost { background: transparent; border: 1.5px solid rgba(255,255,255,0.4); color: #fff; padding: 10px 22px; font-family: 'Poppins', sans-serif; font-size: 13px; cursor: pointer; transition: all 0.2s; border-radius: 2px; }
+        .btn-ghost:hover { background: rgba(255,255,255,0.1); }
+        input, textarea { font-family: 'Poppins', sans-serif; border: 1.5px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.07); color: #fff; padding: 10px 14px; font-size: 14px; outline: none; transition: border 0.2s; width: 100%; border-radius: 2px; }
+        input::placeholder, textarea::placeholder { color: #6b8aa8; }
+        input:focus, textarea:focus { border-color: #ffffff; }
+        input[type=checkbox] { width: auto; accent-color: #ffffff; transform: scale(1.2); cursor: pointer; }
+        .tag { display: inline-block; padding: 3px 10px; font-size: 11px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; border-radius: 2px; }
+        .divider-line { height: 1px; background: rgba(255,255,255,0.2); margin: 28px 0; }
+        .day-tab { padding: 8px 16px; font-family: 'Poppins', sans-serif; font-size: 13px; cursor: pointer; border: none; background: transparent; transition: all 0.2s; border-bottom: 2px solid transparent; color: #7f9cb8; }
+        .day-tab.active { color: #fff; border-bottom: 2px solid #fff; font-weight: 500; }
+        .day-tab:hover:not(.active) { color: #cdd9e4; }
+        .order-row { background: rgba(255,255,255,0.06); padding: 14px 18px; margin-bottom: 10px; border-left: 3px solid #fff; border-radius: 2px; }
+        .suspended-banner { background: rgba(180,70,70,0.85); color: white; text-align: center; padding: 12px; font-family: 'Poppins', sans-serif; font-size: 13px; letter-spacing: 0.5px; }
+        .badge { background: #fff; color: #1c3c5e; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: inline-flex; align-items: center; justify-content: center; margin-left: 6px; font-family: 'Poppins', sans-serif; font-weight: 700; }
+        .field-control-btn { border: none; padding: 4px 10px; font-family: 'Poppins', sans-serif; font-size: 10px; font-weight: 500; letter-spacing: 0.5px; cursor: pointer; transition: all 0.15s; border-radius: 2px; }
+        .script-title { font-family: 'Dancing Script', cursive; font-weight: 700; color: #ffffff; }
+        .card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); }
       `}</style>
 
       {/* Login modal */}
       {showLogin && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
-          <div className="fade-in" style={{ background: "#f5f0e8", padding: "40px", width: 360, maxWidth: "90vw" }}>
-            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, color: "#2c2c2c", marginBottom: 6 }}>Accesso Admin</h2>
-            <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: "#888", marginBottom: 24 }}>Area riservata</p>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.65)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
+          <div className="fade-in" style={{ background: "#1c3c5e", border: "1px solid rgba(255,255,255,0.15)", padding: "40px", width: 360, maxWidth: "90vw" }}>
+            <h2 className="script-title" style={{ fontSize: 30, marginBottom: 4 }}>Accesso Admin</h2>
+            <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: "#7f9cb8", marginBottom: 24 }}>Area riservata</p>
             <div style={{ marginBottom: 14 }}>
-              <label style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, letterSpacing: 1, color: "#888", textTransform: "uppercase", display: "block", marginBottom: 6 }}>Email</label>
+              <label style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, letterSpacing: 1, color: "#9bb8d3", textTransform: "uppercase", display: "block", marginBottom: 6 }}>Email</label>
               <input type="email" value={loginForm.email} onChange={(e) => setLoginForm((f) => ({ ...f, email: e.target.value }))} onKeyDown={(e) => e.key === "Enter" && handleLogin()} />
             </div>
             <div style={{ marginBottom: 20 }}>
-              <label style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, letterSpacing: 1, color: "#888", textTransform: "uppercase", display: "block", marginBottom: 6 }}>Password</label>
+              <label style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, letterSpacing: 1, color: "#9bb8d3", textTransform: "uppercase", display: "block", marginBottom: 6 }}>Password</label>
               <input type="password" value={loginForm.password} onChange={(e) => setLoginForm((f) => ({ ...f, password: e.target.value }))} onKeyDown={(e) => e.key === "Enter" && handleLogin()} />
             </div>
-            {loginError && <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: "#8b2020", marginBottom: 16 }}>{loginError}</div>}
+            {loginError && <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: "#f0a0a0", marginBottom: 16 }}>{loginError}</div>}
             <div style={{ display: "flex", gap: 10 }}>
               <button className="btn-primary" onClick={handleLogin} disabled={loginLoading}>{loginLoading ? "Accesso..." : "Accedi"}</button>
               <button className="btn-ghost" onClick={() => { setShowLogin(false); setLoginError(""); }}>Annulla</button>
@@ -297,27 +292,27 @@ export default function App() {
       )}
 
       {/* Header */}
-      <header style={{ background: "#2c2c2c", padding: "0 32px" }}>
-        <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: 60 }}>
+      <header style={{ padding: "0 32px", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+        <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: 64 }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
-            <h1 style={{ fontFamily: "'Playfair Display', serif", color: "#f5f0e8", fontSize: 22, fontWeight: 600 }}>EngineerEat</h1>
-<span style={{ color: "#888", fontSize: 12, letterSpacing: 1 }}>ORDINAZIONI</span>
+            <h1 className="script-title" style={{ fontSize: 26 }}>EngineerEat</h1>
+            <span style={{ color: "#7f9cb8", fontSize: 11, letterSpacing: 2 }}>ORDINAZIONI</span>
           </div>
           <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
             {adminUser ? (
               <>
-                <button className="day-tab" onClick={() => setView("client")} style={{ color: view === "client" ? "#f5f0e8" : "#888", borderBottomColor: view === "client" ? "#8b6914" : "transparent" }}>
+                <button className="day-tab" onClick={() => setView("client")} style={{ color: view === "client" ? "#fff" : "#7f9cb8", borderBottomColor: view === "client" ? "#fff" : "transparent" }}>
                   Menu & Ordini
                 </button>
-                <button className="day-tab" onClick={() => { setView("admin"); setNewOrderCount(0); }} style={{ color: view === "admin" ? "#f5f0e8" : "#888", borderBottomColor: view === "admin" ? "#8b6914" : "transparent", display: "flex", alignItems: "center" }}>
+                <button className="day-tab" onClick={() => { setView("admin"); setNewOrderCount(0); }} style={{ color: view === "admin" ? "#fff" : "#7f9cb8", borderBottomColor: view === "admin" ? "#fff" : "transparent", display: "flex", alignItems: "center" }}>
                   Admin ⚙{newOrderCount > 0 && <span className="badge">{newOrderCount}</span>}
                 </button>
-                <button onClick={handleLogout} style={{ marginLeft: 8, background: "transparent", border: "1px solid #555", color: "#888", padding: "4px 12px", fontFamily: "'DM Sans', sans-serif", fontSize: 11, cursor: "pointer", letterSpacing: 0.5 }}>
+                <button onClick={handleLogout} style={{ marginLeft: 8, background: "transparent", border: "1px solid rgba(255,255,255,0.2)", color: "#9bb8d3", padding: "4px 12px", fontFamily: "'Poppins', sans-serif", fontSize: 11, cursor: "pointer", letterSpacing: 0.5 }}>
                   Esci
                 </button>
               </>
             ) : (
-              <button onClick={() => setShowLogin(true)} style={{ background: "transparent", border: "none", color: "#555", fontFamily: "'DM Sans', sans-serif", fontSize: 12, cursor: "pointer", letterSpacing: 0.5, padding: "4px 8px" }}>
+              <button onClick={() => setShowLogin(true)} style={{ background: "transparent", border: "none", color: "#5b7a9a", fontFamily: "'Poppins', sans-serif", fontSize: 12, cursor: "pointer", letterSpacing: 0.5, padding: "4px 8px" }}>
                 ⚙
               </button>
             )}
@@ -327,60 +322,59 @@ export default function App() {
 
       {suspended && <div className="suspended-banner">ORDINAZIONI SOSPESE — La cucina non accetta nuove prenotazioni al momento</div>}
 
-      <main style={{ maxWidth: 900, margin: "0 auto", padding: "32px 24px" }}>
+      <main style={{ maxWidth: 900, margin: "0 auto", padding: "40px 24px" }}>
 
         {/* CLIENT VIEW */}
         {view === "client" && today && (
           <div className="fade-in">
-            <div style={{ marginBottom: 20 }}>
-              <span className="tag" style={{ background: "#8b6914", color: "white", marginBottom: 8, display: "block", width: "fit-content" }}>
-                Oggi · {today.day} {today.date}
+            <div style={{ textAlign: "center", marginBottom: 36 }}>
+              <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, letterSpacing: 3, color: "#7f9cb8", textTransform: "uppercase" }}>
+                {today.day} · {today.date}
               </span>
-              <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 28, color: "#2c2c2c" }}>Menu del giorno</h2>
+              <h2 className="script-title" style={{ fontSize: 48, marginTop: 6 }}>Menù del giorno</h2>
             </div>
 
-            {/* Menu del giorno — mostra solo campi non nascosti */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12, marginBottom: 32 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 14, marginBottom: 40 }}>
               {visibleFields.map(({ key, label }) => {
                 const isUnavailable = todayUnavailable.includes(key);
                 return (
-                  <div key={key} style={{ background: "white", padding: "18px 22px", borderTop: `3px solid ${isUnavailable ? "#c0b090" : "#8b6914"}`, opacity: isUnavailable ? 0.7 : 1 }}>
-                    <div style={{ fontSize: 10, fontFamily: "'DM Sans', sans-serif", fontWeight: 500, letterSpacing: 1.5, color: "#888", textTransform: "uppercase", marginBottom: 6 }}>{label}</div>
+                  <div key={key} className="card" style={{ padding: "20px 24px", opacity: isUnavailable ? 0.55 : 1 }}>
+                    <div style={{ fontSize: 10, fontFamily: "'Poppins', sans-serif", fontWeight: 600, letterSpacing: 2, color: "#7f9cb8", textTransform: "uppercase", marginBottom: 8 }}>{label}</div>
                     {isUnavailable ? (
-                      <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: "#a08050", fontStyle: "italic" }}>Non disponibile</div>
+                      <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: "#b08080", fontStyle: "italic" }}>Non disponibile</div>
                     ) : (
-                      <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 16, color: "#2c2c2c" }}>{today[key]}</div>
+                      <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 16, fontWeight: 500, color: "#fff" }}>{today[key]}</div>
                     )}
                   </div>
                 );
               })}
             </div>
 
-            <div className="divider" />
-            <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, color: "#2c2c2c", marginBottom: 16 }}>Menu della settimana</h3>
+            <div className="divider-line" />
+            <h3 className="script-title" style={{ fontSize: 28, marginBottom: 18, textAlign: "center" }}>Menù della settimana</h3>
 
-            <div style={{ borderBottom: "1px solid #d4cfc4", display: "flex", marginBottom: 20, overflowX: "auto" }}>
+            <div style={{ borderBottom: "1px solid rgba(255,255,255,0.15)", display: "flex", marginBottom: 20, overflowX: "auto", justifyContent: "center" }}>
               {menu.map((d, i) => (
                 <button key={d.id} className={`day-tab ${activeDay === i ? "active" : ""}`} onClick={() => setActiveDay(i)}>
                   {d.day}
-                  {d.is_today && <span style={{ marginLeft: 4, color: "#8b6914" }}>•</span>}
+                  {d.is_today && <span style={{ marginLeft: 4, color: "#fff" }}>•</span>}
                 </button>
               ))}
             </div>
 
             {menu[activeDay] && (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 36 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 40 }}>
                 {fields
                   .filter(f => !(menu[activeDay].hidden_fields || []).includes(f.key))
                   .map(({ key, label }) => {
                     const isUnavailable = (menu[activeDay].unavailable_fields || []).includes(key);
                     return (
-                      <div key={key} style={{ background: "white", padding: "14px 16px", opacity: isUnavailable ? 0.7 : 1 }}>
-                        <div style={{ fontSize: 10, fontFamily: "'DM Sans', sans-serif", letterSpacing: 1.5, color: "#888", textTransform: "uppercase", marginBottom: 5 }}>{label}</div>
+                      <div key={key} className="card" style={{ padding: "14px 16px", opacity: isUnavailable ? 0.55 : 1 }}>
+                        <div style={{ fontSize: 10, fontFamily: "'Poppins', sans-serif", letterSpacing: 1.5, color: "#7f9cb8", textTransform: "uppercase", marginBottom: 5 }}>{label}</div>
                         {isUnavailable ? (
-                          <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: "#a08050", fontStyle: "italic" }}>Non disponibile</div>
+                          <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: "#b08080", fontStyle: "italic" }}>Non disponibile</div>
                         ) : (
-                          <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 14, color: "#2c2c2c" }}>{menu[activeDay][key]}</div>
+                          <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, fontWeight: 500, color: "#fff" }}>{menu[activeDay][key]}</div>
                         )}
                       </div>
                     );
@@ -388,43 +382,43 @@ export default function App() {
               </div>
             )}
 
-            <div className="divider" />
-            <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, color: "#2c2c2c", marginBottom: 6 }}>
+            <div className="divider-line" />
+            <h3 className="script-title" style={{ fontSize: 28, marginBottom: 8, textAlign: "center" }}>
               {suspended ? "Ordinazioni chiuse" : "Prenota il tuo pasto"}
             </h3>
 
             {suspended ? (
-              <div style={{ background: "#f9e8e8", border: "1px solid #d4a0a0", padding: "16px 20px", fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: "#8b2020" }}>
+              <div style={{ background: "rgba(180,70,70,0.15)", border: "1px solid rgba(180,70,70,0.3)", padding: "16px 20px", fontFamily: "'Poppins', sans-serif", fontSize: 14, color: "#f0a0a0", textAlign: "center" }}>
                 Le ordinazioni sono temporaneamente sospese. Riprova più tardi.
               </div>
             ) : orderSent ? (
-              <div className="fade-in" style={{ background: "#eaf4e8", border: "1px solid #a0c89a", padding: "20px 24px", fontFamily: "'DM Sans', sans-serif" }}>
-                <div style={{ fontSize: 16, fontWeight: 500, color: "#2d5a27", marginBottom: 6 }}>Prenotazione inviata</div>
-                <div style={{ fontSize: 13, color: "#555" }}>Il tuo ordine è stato ricevuto. Buon appetito!</div>
-                <button className="btn-ghost" style={{ marginTop: 14, fontSize: 12 }} onClick={() => setOrderSent(false)}>Nuovo ordine</button>
+              <div className="fade-in" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.2)", padding: "24px", fontFamily: "'Poppins', sans-serif", textAlign: "center" }}>
+                <div style={{ fontSize: 17, fontWeight: 600, color: "#fff", marginBottom: 6 }}>Prenotazione inviata</div>
+                <div style={{ fontSize: 13, color: "#9bb8d3" }}>Il tuo ordine è stato ricevuto. Buon appetito!</div>
+                <button className="btn-ghost" style={{ marginTop: 16, fontSize: 12 }} onClick={() => setOrderSent(false)}>Nuovo ordine</button>
               </div>
             ) : (
-              <div style={{ background: "white", padding: "24px 28px" }}>
+              <div className="card" style={{ padding: "28px 32px", marginTop: 16 }}>
                 <div style={{ marginBottom: 16 }}>
-                  <label style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, letterSpacing: 1, color: "#888", textTransform: "uppercase", display: "block", marginBottom: 6 }}>Nome e cognome *</label>
+                  <label style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, letterSpacing: 1, color: "#9bb8d3", textTransform: "uppercase", display: "block", marginBottom: 6 }}>Nome e cognome *</label>
                   <input placeholder="Es. Marco Bianchi" value={orderForm.name} onChange={(e) => setOrderForm((f) => ({ ...f, name: e.target.value }))} style={{ maxWidth: 320 }} />
                 </div>
                 <div style={{ marginBottom: 16 }}>
-                  <label style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, letterSpacing: 1, color: "#888", textTransform: "uppercase", display: "block", marginBottom: 12 }}>Selezione *</label>
+                  <label style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, letterSpacing: 1, color: "#9bb8d3", textTransform: "uppercase", display: "block", marginBottom: 12 }}>Selezione *</label>
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                     {visibleFields
                       .filter(f => !todayUnavailable.includes(f.key))
                       .map(({ key, label }) => (
-                        <label key={key} style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", fontSize: 14 }}>
+                        <label key={key} style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer", fontFamily: "'Poppins', sans-serif", fontSize: 14 }}>
                           <input type="checkbox" checked={orderForm[key]} onChange={(e) => setOrderForm((f) => ({ ...f, [key]: e.target.checked }))} />
-                          <span style={{ fontWeight: 400, color: "#555" }}>{label} —</span>
-                          <span style={{ fontFamily: "'Playfair Display', serif", color: "#2c2c2c" }}>{today[key]}</span>
+                          <span style={{ fontWeight: 400, color: "#9bb8d3" }}>{label} —</span>
+                          <span style={{ fontWeight: 500, color: "#fff" }}>{today[key]}</span>
                         </label>
                       ))}
                   </div>
                 </div>
-                <div style={{ marginBottom: 20 }}>
-                  <label style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, letterSpacing: 1, color: "#888", textTransform: "uppercase", display: "block", marginBottom: 6 }}>Note (facoltativo)</label>
+                <div style={{ marginBottom: 22 }}>
+                  <label style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, letterSpacing: 1, color: "#9bb8d3", textTransform: "uppercase", display: "block", marginBottom: 6 }}>Note (facoltativo)</label>
                   <textarea placeholder="Allergie, intolleranze, preferenze..." value={orderForm.note} onChange={(e) => setOrderForm((f) => ({ ...f, note: e.target.value }))} style={{ resize: "vertical", minHeight: 70, maxWidth: 400 }} />
                 </div>
                 <button className="btn-primary" onClick={handleOrder} disabled={submitting}>
@@ -432,6 +426,23 @@ export default function App() {
                 </button>
               </div>
             )}
+
+            {/* Decorazione line-art: forchetta, coltello e piatto con cuore di vapore */}
+            <div style={{ display: "flex", justifyContent: "center", marginTop: 56, opacity: 0.85 }}>
+              <svg width="220" height="130" viewBox="0 0 220 130" fill="none" xmlns="http://www.w3.org/2000/svg">
+                {/* Cuore di vapore */}
+                <path d="M110 8 C100 18, 100 28, 110 34 C120 40, 108 46, 110 56" stroke="white" strokeWidth="1.6" fill="none" strokeLinecap="round"/>
+                <path d="M110 8 C113 2, 122 2, 124 10 C126 18, 116 22, 110 30" stroke="white" strokeWidth="1.6" fill="none" strokeLinecap="round"/>
+                {/* Piatto */}
+                <ellipse cx="110" cy="92" rx="64" ry="20" stroke="white" strokeWidth="1.6" fill="none"/>
+                <ellipse cx="110" cy="90" rx="38" ry="11" stroke="white" strokeWidth="1.3" fill="none" opacity="0.7"/>
+                {/* Forchetta */}
+                <path d="M44 56 L44 78 M40 56 L40 66 M48 56 L48 66 M44 78 L44 110" stroke="white" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M40 56 C40 50, 44 50, 44 56 M48 56 C48 50, 44 50, 44 56" stroke="white" strokeWidth="1.6" fill="none"/>
+                {/* Coltello */}
+                <path d="M176 50 C170 52, 168 60, 172 70 L176 80 L176 112" stroke="white" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
           </div>
         )}
 
@@ -440,35 +451,35 @@ export default function App() {
           <div className="fade-in">
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28 }}>
               <div>
-                <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, color: "#2c2c2c" }}>Pannello Admin</h2>
-                <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: "#888", marginTop: 4 }}>{orders.length} ordini ricevuti oggi</p>
+                <h2 className="script-title" style={{ fontSize: 32 }}>Pannello Admin</h2>
+                <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: "#7f9cb8", marginTop: 4 }}>{orders.length} ordini ricevuti oggi</p>
               </div>
-              <button onClick={toggleSuspended} style={{ padding: "10px 22px", fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 500, cursor: "pointer", border: "none", background: suspended ? "#2d5a27" : "#8b2020", color: "white", letterSpacing: 0.5, transition: "all 0.2s" }}>
+              <button onClick={toggleSuspended} style={{ padding: "10px 22px", fontFamily: "'Poppins', sans-serif", fontSize: 13, fontWeight: 500, cursor: "pointer", border: "none", background: suspended ? "rgba(80,150,80,0.85)" : "rgba(180,70,70,0.85)", color: "white", letterSpacing: 0.5, transition: "all 0.2s", borderRadius: 2 }}>
                 {suspended ? "Riapri ordinazioni" : "Sospendi ordinazioni"}
               </button>
             </div>
 
-            <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, marginBottom: 14, color: "#2c2c2c" }}>Ordini ricevuti</h3>
+            <h3 className="script-title" style={{ fontSize: 24, marginBottom: 14 }}>Ordini ricevuti</h3>
             {orders.length === 0 ? (
-              <div style={{ background: "white", padding: "24px", fontFamily: "'DM Sans', sans-serif", color: "#888", fontSize: 14 }}>Nessun ordine ancora.</div>
+              <div className="card" style={{ padding: "24px", fontFamily: "'Poppins', sans-serif", color: "#7f9cb8", fontSize: 14 }}>Nessun ordine ancora.</div>
             ) : (
               orders.map((o) => (
                 <div key={o.id} className="order-row fade-in">
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-                        <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 16, color: "#2c2c2c" }}>{o.name}</span>
-                        <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: "#888" }}>
+                        <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: 15, color: "#fff" }}>{o.name}</span>
+                        <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: "#7f9cb8" }}>
                           {new Date(o.created_at).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}
                         </span>
                       </div>
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: o.note ? 8 : 0 }}>
-                        {o.primo && <span className="tag" style={{ background: "#f0ebe0", color: "#5a4a1e" }}>Primo</span>}
-                        {o.secondo && <span className="tag" style={{ background: "#f0ebe0", color: "#5a4a1e" }}>Secondo</span>}
-                        {o.contorno && <span className="tag" style={{ background: "#f0ebe0", color: "#5a4a1e" }}>Contorno</span>}
-                        {o.dessert && <span className="tag" style={{ background: "#f0ebe0", color: "#5a4a1e" }}>Dessert</span>}
+                        {o.primo && <span className="tag" style={{ background: "rgba(255,255,255,0.12)", color: "#cfe0ee" }}>Primo</span>}
+                        {o.secondo && <span className="tag" style={{ background: "rgba(255,255,255,0.12)", color: "#cfe0ee" }}>Secondo</span>}
+                        {o.contorno && <span className="tag" style={{ background: "rgba(255,255,255,0.12)", color: "#cfe0ee" }}>Contorno</span>}
+                        {o.dessert && <span className="tag" style={{ background: "rgba(255,255,255,0.12)", color: "#cfe0ee" }}>Dessert</span>}
                       </div>
-                      {o.note && <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: "#888", fontStyle: "italic" }}>"{o.note}"</div>}
+                      {o.note && <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: "#7f9cb8", fontStyle: "italic" }}>"{o.note}"</div>}
                     </div>
                     <button className="btn-danger" onClick={() => deleteOrder(o.id)} style={{ flexShrink: 0, fontSize: 12, padding: "6px 14px" }}>Rimuovi</button>
                   </div>
@@ -476,30 +487,30 @@ export default function App() {
               ))
             )}
 
-            <div className="divider" />
-            <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, color: "#2c2c2c", marginBottom: 4 }}>Gestione menu settimanale</h3>
-            <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: "#888", marginBottom: 16 }}>Per ogni portata puoi impostarla come non disponibile o nasconderla completamente.</p>
+            <div className="divider-line" />
+            <h3 className="script-title" style={{ fontSize: 24, marginBottom: 4 }}>Gestione menù settimanale</h3>
+            <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: "#7f9cb8", marginBottom: 16 }}>Per ogni portata puoi impostarla come non disponibile o nasconderla completamente.</p>
 
             {menu.map((day) => {
               const hidden = day.hidden_fields || [];
               const unavailable = day.unavailable_fields || [];
               return (
-                <div key={day.id} style={{ background: "white", padding: "16px 20px", marginBottom: 10, borderLeft: `3px solid ${day.is_today ? "#8b6914" : "#d4cfc4"}` }}>
+                <div key={day.id} className="card" style={{ padding: "16px 20px", marginBottom: 10, borderLeft: `3px solid ${day.is_today ? "#fff" : "rgba(255,255,255,0.2)"}` }}>
                   {editingDay === day.id ? (
                     <div>
-                      <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 600, marginBottom: 12, color: "#8b6914" }}>Modifica {day.day}</div>
+                      <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, fontWeight: 600, marginBottom: 12, color: "#fff" }}>Modifica {day.day}</div>
                       <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10, marginBottom: 10 }}>
                         <div>
-                          <label style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: "#888", display: "block", marginBottom: 4 }}>Giorno</label>
+                          <label style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: "#9bb8d3", display: "block", marginBottom: 4 }}>Giorno</label>
                           <input value={editForm.day || ""} onChange={(e) => setEditForm((f) => ({ ...f, day: e.target.value }))} />
                         </div>
                         <div>
-                          <label style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: "#888", display: "block", marginBottom: 4 }}>Data</label>
+                          <label style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: "#9bb8d3", display: "block", marginBottom: 4 }}>Data</label>
                           <input value={editForm.date || ""} onChange={(e) => setEditForm((f) => ({ ...f, date: e.target.value }))} />
                         </div>
                         {fields.map(({ key, label }) => (
                           <div key={key}>
-                            <label style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: "#888", display: "block", marginBottom: 4 }}>{label}</label>
+                            <label style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: "#9bb8d3", display: "block", marginBottom: 4 }}>{label}</label>
                             <input value={editForm[key] || ""} onChange={(e) => setEditForm((f) => ({ ...f, [key]: e.target.value }))} />
                           </div>
                         ))}
@@ -513,8 +524,8 @@ export default function App() {
                     <div>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, color: "#2c2c2c" }}>{day.day} {day.date}</span>
-                          {day.is_today && <span className="tag" style={{ background: "#8b6914", color: "white", fontSize: 10 }}>Oggi</span>}
+                          <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: 15, color: "#fff" }}>{day.day} {day.date}</span>
+                          {day.is_today && <span className="tag" style={{ background: "rgba(255,255,255,0.9)", color: "#1c3c5e", fontSize: 10 }}>Oggi</span>}
                         </div>
                         <div style={{ display: "flex", gap: 8 }}>
                           {!day.is_today && (
@@ -524,33 +535,32 @@ export default function App() {
                         </div>
                       </div>
 
-                      {/* Controlli visibilità portate */}
                       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                         {fields.map(({ key, label }) => {
                           const isHidden = hidden.includes(key);
                           const isUnavailable = unavailable.includes(key);
                           const status = isHidden ? "hidden" : isUnavailable ? "unavailable" : "visible";
                           return (
-                            <div key={key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", background: isHidden ? "#f5f0f0" : isUnavailable ? "#fdf8ee" : "#f8f8f5", borderLeft: `2px solid ${isHidden ? "#c09090" : isUnavailable ? "#c0a060" : "#b0c090"}` }}>
+                            <div key={key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", background: isHidden ? "rgba(180,70,70,0.1)" : isUnavailable ? "rgba(200,160,60,0.1)" : "rgba(255,255,255,0.04)", borderLeft: `2px solid ${isHidden ? "#b04545" : isUnavailable ? "#c0a050" : "#5a9a6a"}` }}>
                               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                                <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, fontWeight: 600, color: "#888", textTransform: "uppercase", letterSpacing: 1, width: 70 }}>{label}</span>
-                                <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 13, color: isHidden ? "#aaa" : isUnavailable ? "#a08050" : "#2c2c2c", textDecoration: isHidden ? "line-through" : "none", fontStyle: isUnavailable ? "italic" : "normal" }}>
+                                <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, fontWeight: 600, color: "#7f9cb8", textTransform: "uppercase", letterSpacing: 1, width: 70 }}>{label}</span>
+                                <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, fontWeight: 500, color: isHidden ? "#6b7d8e" : isUnavailable ? "#c0a050" : "#fff", textDecoration: isHidden ? "line-through" : "none", fontStyle: isUnavailable ? "italic" : "normal" }}>
                                   {isHidden ? "nascosto" : isUnavailable ? "non disponibile" : day[key]}
                                 </span>
                               </div>
                               <div style={{ display: "flex", gap: 4 }}>
                                 {status !== "visible" && (
-                                  <button className="field-control-btn" onClick={() => toggleFieldVisibility(day.id, key, hidden, unavailable, "restore")} style={{ background: "#eaf4e8", color: "#2d5a27" }}>
+                                  <button className="field-control-btn" onClick={() => toggleFieldVisibility(day.id, key, hidden, unavailable, "restore")} style={{ background: "rgba(90,154,106,0.2)", color: "#8fcf9f" }}>
                                     Ripristina
                                   </button>
                                 )}
                                 {status !== "unavailable" && (
-                                  <button className="field-control-btn" onClick={() => toggleFieldVisibility(day.id, key, hidden, unavailable, "unavailable")} style={{ background: "#fdf0d0", color: "#8b6914" }}>
+                                  <button className="field-control-btn" onClick={() => toggleFieldVisibility(day.id, key, hidden, unavailable, "unavailable")} style={{ background: "rgba(192,160,80,0.2)", color: "#d8be7a" }}>
                                     Non disponibile
                                   </button>
                                 )}
                                 {status !== "hidden" && (
-                                  <button className="field-control-btn" onClick={() => toggleFieldVisibility(day.id, key, hidden, unavailable, "hide")} style={{ background: "#f5e8e8", color: "#8b2020" }}>
+                                  <button className="field-control-btn" onClick={() => toggleFieldVisibility(day.id, key, hidden, unavailable, "hide")} style={{ background: "rgba(180,70,70,0.2)", color: "#e09a9a" }}>
                                     Nascondi
                                   </button>
                                 )}
