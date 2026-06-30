@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "./supabase.js";
 
-const fields = [
-  { key: "primo", label: "Primo" },
-  { key: "secondo", label: "Secondo" },
-  { key: "contorno", label: "Contorno" },
-  { key: "dessert", label: "Dessert" },
+const categories = [
+  { itemsKey: "primi_items", hideKey: "primo", label: "Primi" },
+  { itemsKey: "secondi_items", hideKey: "secondo", label: "Secondi" },
+  { itemsKey: "contorni_items", hideKey: "contorno", label: "Contorni" },
+  { itemsKey: "dessert_items", hideKey: "dessert", label: "Dessert" },
 ];
 
 function sendNotification(name) {
@@ -30,7 +30,7 @@ export default function App() {
   const [menu, setMenu] = useState([]);
   const [orders, setOrders] = useState([]);
   const [suspended, setSuspended] = useState(false);
-  const [orderForm, setOrderForm] = useState({ name: "", primo: false, secondo: false, contorno: false, dessert: false, note: "" });
+  const [orderForm, setOrderForm] = useState({ name: "", note: "", selectedItems: [] });
   const [orderSent, setOrderSent] = useState(false);
   const [editingDay, setEditingDay] = useState(null);
   const [editForm, setEditForm] = useState({});
@@ -43,6 +43,7 @@ export default function App() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [newOrderCount, setNewOrderCount] = useState(0);
+  const [newItemText, setNewItemText] = useState({});
   const initialLoadDone = useRef(false);
 
   useEffect(() => {
@@ -156,22 +157,32 @@ export default function App() {
     setNewOrderCount(0);
   }
 
+  function toggleSelectItem(category, nome) {
+    setOrderForm((f) => {
+      const exists = f.selectedItems.some((i) => i.category === category && i.nome === nome);
+      const selectedItems = exists
+        ? f.selectedItems.filter((i) => !(i.category === category && i.nome === nome))
+        : [...f.selectedItems, { category, nome }];
+      return { ...f, selectedItems };
+    });
+  }
+
+  function isSelected(category, nome) {
+    return orderForm.selectedItems.some((i) => i.category === category && i.nome === nome);
+  }
+
   async function handleOrder() {
     if (!orderForm.name.trim()) return;
-    const hasItem = orderForm.primo || orderForm.secondo || orderForm.contorno || orderForm.dessert;
-    if (!hasItem) return;
+    if (orderForm.selectedItems.length === 0) return;
     setSubmitting(true);
     const { error } = await supabase.from("orders").insert([{
       name: orderForm.name,
-      primo: orderForm.primo,
-      secondo: orderForm.secondo,
-      contorno: orderForm.contorno,
-      dessert: orderForm.dessert,
+      selected_items: orderForm.selectedItems,
       note: orderForm.note,
     }]);
     if (!error) {
       setOrderSent(true);
-      setOrderForm({ name: "", primo: false, secondo: false, contorno: false, dessert: false, note: "" });
+      setOrderForm({ name: "", note: "", selectedItems: [] });
     }
     setSubmitting(false);
   }
@@ -194,40 +205,53 @@ export default function App() {
 
   function startEdit(day) {
     setEditingDay(day.id);
-    setEditForm({ ...day });
+    setEditForm({ day: day.day, date: day.date });
   }
 
   async function saveEdit() {
     await supabase.from("menu").update({
       day: editForm.day,
       date: editForm.date,
-      primo: editForm.primo,
-      secondo: editForm.secondo,
-      contorno: editForm.contorno,
-      dessert: editForm.dessert,
     }).eq("id", editingDay);
     setEditingDay(null);
     loadMenu();
   }
 
-  async function toggleFieldVisibility(dayId, fieldKey, currentHidden, currentUnavailable, action) {
+  async function addItem(dayId, itemsKey, currentItems) {
+    const inputKey = `${dayId}_${itemsKey}`;
+    const text = (newItemText[inputKey] || "").trim();
+    if (!text) return;
+    const newItems = [...(currentItems || []), { nome: text, unavailable: false }];
+    await supabase.from("menu").update({ [itemsKey]: newItems }).eq("id", dayId);
+    setNewItemText((s) => ({ ...s, [inputKey]: "" }));
+    loadMenu();
+  }
+
+  async function removeItem(dayId, itemsKey, currentItems, index) {
+    const newItems = currentItems.filter((_, i) => i !== index);
+    await supabase.from("menu").update({ [itemsKey]: newItems }).eq("id", dayId);
+    loadMenu();
+  }
+
+  async function toggleItemUnavailable(dayId, itemsKey, currentItems, index) {
+    const newItems = currentItems.map((it, i) => i === index ? { ...it, unavailable: !it.unavailable } : it);
+    await supabase.from("menu").update({ [itemsKey]: newItems }).eq("id", dayId);
+    loadMenu();
+  }
+
+  async function toggleCategoryHidden(dayId, hideKey, currentHidden) {
     let newHidden = [...(currentHidden || [])];
-    let newUnavailable = [...(currentUnavailable || [])];
-    newHidden = newHidden.filter(f => f !== fieldKey);
-    newUnavailable = newUnavailable.filter(f => f !== fieldKey);
-    if (action === "hide") newHidden.push(fieldKey);
-    if (action === "unavailable") newUnavailable.push(fieldKey);
-    await supabase.from("menu").update({
-      hidden_fields: newHidden,
-      unavailable_fields: newUnavailable,
-    }).eq("id", dayId);
+    if (newHidden.includes(hideKey)) newHidden = newHidden.filter((f) => f !== hideKey);
+    else newHidden.push(hideKey);
+    await supabase.from("menu").update({ hidden_fields: newHidden }).eq("id", dayId);
     loadMenu();
   }
 
   const today = menu.find((d) => d.is_today) || menu[0];
-  const todayHidden = today?.hidden_fields || [];
-  const todayUnavailable = today?.unavailable_fields || [];
-  const visibleFields = fields.filter(f => !todayHidden.includes(f.key));
+
+  function availableItems(day, itemsKey) {
+    return (day?.[itemsKey] || []).filter((it) => !it.unavailable);
+  }
 
   if (loading) {
     return (
@@ -266,6 +290,7 @@ export default function App() {
         .field-control-btn { border: none; padding: 4px 10px; font-family: 'Poppins', sans-serif; font-size: 10px; font-weight: 500; letter-spacing: 0.5px; cursor: pointer; transition: all 0.15s; border-radius: 2px; }
         .script-title { font-family: 'Dancing Script', cursive; font-weight: 700; color: #ffffff; }
         .card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); }
+        .item-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; margin-bottom: 4px; background: rgba(255,255,255,0.04); border-radius: 2px; }
       `}</style>
 
       {/* Login modal */}
@@ -335,19 +360,23 @@ export default function App() {
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 14, marginBottom: 40 }}>
-              {visibleFields.map(({ key, label }) => {
-                const isUnavailable = todayUnavailable.includes(key);
-                return (
-                  <div key={key} className="card" style={{ padding: "20px 24px", opacity: isUnavailable ? 0.55 : 1 }}>
-                    <div style={{ fontSize: 10, fontFamily: "'Poppins', sans-serif", fontWeight: 600, letterSpacing: 2, color: "#7f9cb8", textTransform: "uppercase", marginBottom: 8 }}>{label}</div>
-                    {isUnavailable ? (
-                      <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: "#b08080", fontStyle: "italic" }}>Non disponibile</div>
-                    ) : (
-                      <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 16, fontWeight: 500, color: "#fff" }}>{today[key]}</div>
-                    )}
-                  </div>
-                );
-              })}
+              {categories
+                .filter((c) => !(today.hidden_fields || []).includes(c.hideKey))
+                .map((c) => {
+                  const avail = availableItems(today, c.itemsKey);
+                  return (
+                    <div key={c.itemsKey} className="card" style={{ padding: "20px 24px" }}>
+                      <div style={{ fontSize: 10, fontFamily: "'Poppins', sans-serif", fontWeight: 600, letterSpacing: 2, color: "#7f9cb8", textTransform: "uppercase", marginBottom: 8 }}>{c.label}</div>
+                      {avail.length === 0 ? (
+                        <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: "#b08080", fontStyle: "italic" }}>Non disponibile</div>
+                      ) : (
+                        <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 15, fontWeight: 500, color: "#fff", lineHeight: 1.6 }}>
+                          {avail.map((it) => it.nome).join(" · ")}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
             </div>
 
             <div className="divider-line" />
@@ -364,17 +393,19 @@ export default function App() {
 
             {menu[activeDay] && (
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 40 }}>
-                {fields
-                  .filter(f => !(menu[activeDay].hidden_fields || []).includes(f.key))
-                  .map(({ key, label }) => {
-                    const isUnavailable = (menu[activeDay].unavailable_fields || []).includes(key);
+                {categories
+                  .filter((c) => !(menu[activeDay].hidden_fields || []).includes(c.hideKey))
+                  .map((c) => {
+                    const avail = availableItems(menu[activeDay], c.itemsKey);
                     return (
-                      <div key={key} className="card" style={{ padding: "14px 16px", opacity: isUnavailable ? 0.55 : 1 }}>
-                        <div style={{ fontSize: 10, fontFamily: "'Poppins', sans-serif", letterSpacing: 1.5, color: "#7f9cb8", textTransform: "uppercase", marginBottom: 5 }}>{label}</div>
-                        {isUnavailable ? (
+                      <div key={c.itemsKey} className="card" style={{ padding: "14px 16px" }}>
+                        <div style={{ fontSize: 10, fontFamily: "'Poppins', sans-serif", letterSpacing: 1.5, color: "#7f9cb8", textTransform: "uppercase", marginBottom: 5 }}>{c.label}</div>
+                        {avail.length === 0 ? (
                           <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: "#b08080", fontStyle: "italic" }}>Non disponibile</div>
                         ) : (
-                          <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, fontWeight: 500, color: "#fff" }}>{menu[activeDay][key]}</div>
+                          <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, fontWeight: 500, color: "#fff", lineHeight: 1.5 }}>
+                            {avail.map((it) => it.nome).join(", ")}
+                          </div>
                         )}
                       </div>
                     );
@@ -405,16 +436,26 @@ export default function App() {
                 </div>
                 <div style={{ marginBottom: 16 }}>
                   <label style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, letterSpacing: 1, color: "#9bb8d3", textTransform: "uppercase", display: "block", marginBottom: 12 }}>Selezione *</label>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    {visibleFields
-                      .filter(f => !todayUnavailable.includes(f.key))
-                      .map(({ key, label }) => (
-                        <label key={key} style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer", fontFamily: "'Poppins', sans-serif", fontSize: 14 }}>
-                          <input type="checkbox" checked={orderForm[key]} onChange={(e) => setOrderForm((f) => ({ ...f, [key]: e.target.checked }))} />
-                          <span style={{ fontWeight: 400, color: "#9bb8d3" }}>{label} —</span>
-                          <span style={{ fontWeight: 500, color: "#fff" }}>{today[key]}</span>
-                        </label>
-                      ))}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                    {categories
+                      .filter((c) => !(today.hidden_fields || []).includes(c.hideKey))
+                      .map((c) => {
+                        const avail = availableItems(today, c.itemsKey);
+                        if (avail.length === 0) return null;
+                        return (
+                          <div key={c.itemsKey}>
+                            <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, letterSpacing: 1.5, color: "#7f9cb8", textTransform: "uppercase", marginBottom: 8 }}>{c.label}</div>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                              {avail.map((it) => (
+                                <label key={it.nome} style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer", fontFamily: "'Poppins', sans-serif", fontSize: 14 }}>
+                                  <input type="checkbox" checked={isSelected(c.label, it.nome)} onChange={() => toggleSelectItem(c.label, it.nome)} />
+                                  <span style={{ fontWeight: 500, color: "#fff" }}>{it.nome}</span>
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
                   </div>
                 </div>
                 <div style={{ marginBottom: 22 }}>
@@ -426,52 +467,6 @@ export default function App() {
                 </button>
               </div>
             )}
-
-            {/* Decorazione line-art: piatto con cuore di vapore, forchetta e coltello */}
-            <div style={{ display: "flex", justifyContent: "center", marginTop: 60, opacity: 0.9 }}>
-              <svg width="320" height="210" viewBox="0 0 320 210" fill="none" xmlns="http://www.w3.org/2000/svg">
-                {/* Cuore di vapore che sale dal piatto, un unico tratto fluido */}
-                <path
-                  d="M160 18
-                     C 148 26, 146 38, 156 46
-                     C 164 52, 158 60, 160 70
-                     C 162 60, 156 52, 164 46
-                     C 174 38, 172 26, 160 18 Z"
-                  stroke="white" strokeWidth="2" fill="none" strokeLinejoin="round" strokeLinecap="round"
-                />
-                <path d="M160 70 C 160 80, 160 86, 160 92" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round"/>
-
-                {/* Piatto ellittico a doppio bordo */}
-                <ellipse cx="160" cy="128" rx="92" ry="28" stroke="white" strokeWidth="2" fill="none"/>
-                <ellipse cx="160" cy="125" rx="54" ry="15" stroke="white" strokeWidth="1.4" fill="none" opacity="0.65"/>
-
-                {/* Forchetta — linea continua, rebbi arrotondati */}
-                <path
-                  d="M56 70
-                     L56 100
-                     C 56 108, 64 112, 70 108
-                     L 70 160
-                     M48 70 L48 92
-                     M64 70 L64 92
-                     M56 70 L56 92"
-                  stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"
-                />
-                <path d="M48 70 C 48 60, 56 60, 56 70 M64 70 C 64 60, 56 60, 56 70" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round"/>
-
-                {/* Coltello — lama affusolata e manico */}
-                <path
-                  d="M258 64
-                     C 246 68, 240 80, 246 96
-                     L 252 112
-                     C 254 118, 254 124, 254 130
-                     L 254 168"
-                  stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"
-                />
-
-                {/* Filo decorativo che collega gli elementi, come nel menù fisico */}
-                <path d="M70 160 C 110 178, 210 178, 254 168" stroke="white" strokeWidth="1.2" fill="none" strokeLinecap="round" opacity="0.5"/>
-              </svg>
-            </div>
           </div>
         )}
 
@@ -503,10 +498,18 @@ export default function App() {
                         </span>
                       </div>
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: o.note ? 8 : 0 }}>
-                        {o.primo && <span className="tag" style={{ background: "rgba(255,255,255,0.12)", color: "#cfe0ee" }}>Primo</span>}
-                        {o.secondo && <span className="tag" style={{ background: "rgba(255,255,255,0.12)", color: "#cfe0ee" }}>Secondo</span>}
-                        {o.contorno && <span className="tag" style={{ background: "rgba(255,255,255,0.12)", color: "#cfe0ee" }}>Contorno</span>}
-                        {o.dessert && <span className="tag" style={{ background: "rgba(255,255,255,0.12)", color: "#cfe0ee" }}>Dessert</span>}
+                        {(o.selected_items && o.selected_items.length > 0) ? (
+                          o.selected_items.map((it, idx) => (
+                            <span key={idx} className="tag" style={{ background: "rgba(255,255,255,0.12)", color: "#cfe0ee" }}>{it.category}: {it.nome}</span>
+                          ))
+                        ) : (
+                          <>
+                            {o.primo && <span className="tag" style={{ background: "rgba(255,255,255,0.12)", color: "#cfe0ee" }}>Primo</span>}
+                            {o.secondo && <span className="tag" style={{ background: "rgba(255,255,255,0.12)", color: "#cfe0ee" }}>Secondo</span>}
+                            {o.contorno && <span className="tag" style={{ background: "rgba(255,255,255,0.12)", color: "#cfe0ee" }}>Contorno</span>}
+                            {o.dessert && <span className="tag" style={{ background: "rgba(255,255,255,0.12)", color: "#cfe0ee" }}>Dessert</span>}
+                          </>
+                        )}
                       </div>
                       {o.note && <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: "#7f9cb8", fontStyle: "italic" }}>"{o.note}"</div>}
                     </div>
@@ -518,91 +521,96 @@ export default function App() {
 
             <div className="divider-line" />
             <h3 className="script-title" style={{ fontSize: 24, marginBottom: 4 }}>Gestione menù settimanale</h3>
-            <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: "#7f9cb8", marginBottom: 16 }}>Per ogni portata puoi impostarla come non disponibile o nasconderla completamente.</p>
+            <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: "#7f9cb8", marginBottom: 16 }}>Aggiungi quanti piatti vuoi per ogni categoria, segnali come non disponibili o eliminali.</p>
 
-            {menu.map((day) => {
-              const hidden = day.hidden_fields || [];
-              const unavailable = day.unavailable_fields || [];
-              return (
-                <div key={day.id} className="card" style={{ padding: "16px 20px", marginBottom: 10, borderLeft: `3px solid ${day.is_today ? "#fff" : "rgba(255,255,255,0.2)"}` }}>
-                  {editingDay === day.id ? (
-                    <div>
-                      <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, fontWeight: 600, marginBottom: 12, color: "#fff" }}>Modifica {day.day}</div>
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10, marginBottom: 10 }}>
-                        <div>
-                          <label style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: "#9bb8d3", display: "block", marginBottom: 4 }}>Giorno</label>
-                          <input value={editForm.day || ""} onChange={(e) => setEditForm((f) => ({ ...f, day: e.target.value }))} />
+            {menu.map((day) => (
+              <div key={day.id} className="card" style={{ padding: "18px 20px", marginBottom: 14, borderLeft: `3px solid ${day.is_today ? "#fff" : "rgba(255,255,255,0.2)"}` }}>
+                {editingDay === day.id ? (
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, fontWeight: 600, marginBottom: 12, color: "#fff" }}>Modifica giorno</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10, marginBottom: 10 }}>
+                      <div>
+                        <label style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: "#9bb8d3", display: "block", marginBottom: 4 }}>Giorno</label>
+                        <input value={editForm.day || ""} onChange={(e) => setEditForm((f) => ({ ...f, day: e.target.value }))} />
+                      </div>
+                      <div>
+                        <label style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: "#9bb8d3", display: "block", marginBottom: 4 }}>Data</label>
+                        <input value={editForm.date || ""} onChange={(e) => setEditForm((f) => ({ ...f, date: e.target.value }))} />
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button className="btn-primary" style={{ fontSize: 12, padding: "8px 18px" }} onClick={saveEdit}>Salva</button>
+                      <button className="btn-ghost" style={{ fontSize: 12, padding: "8px 18px" }} onClick={() => setEditingDay(null)}>Annulla</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: 16, color: "#fff" }}>{day.day} {day.date}</span>
+                      {day.is_today && <span className="tag" style={{ background: "rgba(255,255,255,0.9)", color: "#1c3c5e", fontSize: 10 }}>Oggi</span>}
+                    </div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      {!day.is_today && (
+                        <button className="btn-ghost" style={{ fontSize: 11, padding: "6px 14px" }} onClick={() => setToday(day.id)}>Imposta oggi</button>
+                      )}
+                      <button className="btn-ghost" style={{ fontSize: 11, padding: "6px 14px" }} onClick={() => startEdit(day)}>Modifica giorno</button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Categorie con liste di piatti */}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 14 }}>
+                  {categories.map((c) => {
+                    const items = day[c.itemsKey] || [];
+                    const isHidden = (day.hidden_fields || []).includes(c.hideKey);
+                    const inputKey = `${day.id}_${c.itemsKey}`;
+                    return (
+                      <div key={c.itemsKey} style={{ background: "rgba(255,255,255,0.03)", padding: "12px 14px", opacity: isHidden ? 0.5 : 1 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                          <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, fontWeight: 600, color: "#9bb8d3", textTransform: "uppercase", letterSpacing: 1 }}>{c.label}</span>
+                          <button onClick={() => toggleCategoryHidden(day.id, c.hideKey, day.hidden_fields)} style={{ background: "transparent", border: "none", color: isHidden ? "#8fcf9f" : "#e09a9a", fontFamily: "'Poppins', sans-serif", fontSize: 10, cursor: "pointer", letterSpacing: 0.5 }}>
+                            {isHidden ? "Mostra categoria" : "Nascondi categoria"}
+                          </button>
                         </div>
-                        <div>
-                          <label style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: "#9bb8d3", display: "block", marginBottom: 4 }}>Data</label>
-                          <input value={editForm.date || ""} onChange={(e) => setEditForm((f) => ({ ...f, date: e.target.value }))} />
-                        </div>
-                        {fields.map(({ key, label }) => (
-                          <div key={key}>
-                            <label style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: "#9bb8d3", display: "block", marginBottom: 4 }}>{label}</label>
-                            <input value={editForm[key] || ""} onChange={(e) => setEditForm((f) => ({ ...f, [key]: e.target.value }))} />
+
+                        {items.length === 0 && (
+                          <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: "#5b7a9a", fontStyle: "italic", marginBottom: 8 }}>Nessun piatto inserito</div>
+                        )}
+
+                        {items.map((it, idx) => (
+                          <div key={idx} className="item-row">
+                            <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: it.unavailable ? "#6b7d8e" : "#fff", textDecoration: it.unavailable ? "line-through" : "none" }}>
+                              {it.nome}
+                            </span>
+                            <div style={{ display: "flex", gap: 4 }}>
+                              <button className="field-control-btn" onClick={() => toggleItemUnavailable(day.id, c.itemsKey, items, idx)} style={{ background: it.unavailable ? "rgba(90,154,106,0.2)" : "rgba(192,160,80,0.2)", color: it.unavailable ? "#8fcf9f" : "#d8be7a" }}>
+                                {it.unavailable ? "Disponibile" : "Esaurito"}
+                              </button>
+                              <button className="field-control-btn" onClick={() => removeItem(day.id, c.itemsKey, items, idx)} style={{ background: "rgba(180,70,70,0.2)", color: "#e09a9a" }}>
+                                ✕
+                              </button>
+                            </div>
                           </div>
                         ))}
-                      </div>
-                      <div style={{ display: "flex", gap: 8 }}>
-                        <button className="btn-primary" style={{ fontSize: 12, padding: "8px 18px" }} onClick={saveEdit}>Salva</button>
-                        <button className="btn-ghost" style={{ fontSize: 12, padding: "8px 18px" }} onClick={() => setEditingDay(null)}>Annulla</button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: 15, color: "#fff" }}>{day.day} {day.date}</span>
-                          {day.is_today && <span className="tag" style={{ background: "rgba(255,255,255,0.9)", color: "#1c3c5e", fontSize: 10 }}>Oggi</span>}
-                        </div>
-                        <div style={{ display: "flex", gap: 8 }}>
-                          {!day.is_today && (
-                            <button className="btn-ghost" style={{ fontSize: 11, padding: "6px 14px" }} onClick={() => setToday(day.id)}>Imposta oggi</button>
-                          )}
-                          <button className="btn-ghost" style={{ fontSize: 11, padding: "6px 14px" }} onClick={() => startEdit(day)}>Modifica</button>
-                        </div>
-                      </div>
 
-                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                        {fields.map(({ key, label }) => {
-                          const isHidden = hidden.includes(key);
-                          const isUnavailable = unavailable.includes(key);
-                          const status = isHidden ? "hidden" : isUnavailable ? "unavailable" : "visible";
-                          return (
-                            <div key={key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", background: isHidden ? "rgba(180,70,70,0.1)" : isUnavailable ? "rgba(200,160,60,0.1)" : "rgba(255,255,255,0.04)", borderLeft: `2px solid ${isHidden ? "#b04545" : isUnavailable ? "#c0a050" : "#5a9a6a"}` }}>
-                              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                                <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, fontWeight: 600, color: "#7f9cb8", textTransform: "uppercase", letterSpacing: 1, width: 70 }}>{label}</span>
-                                <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, fontWeight: 500, color: isHidden ? "#6b7d8e" : isUnavailable ? "#c0a050" : "#fff", textDecoration: isHidden ? "line-through" : "none", fontStyle: isUnavailable ? "italic" : "normal" }}>
-                                  {isHidden ? "nascosto" : isUnavailable ? "non disponibile" : day[key]}
-                                </span>
-                              </div>
-                              <div style={{ display: "flex", gap: 4 }}>
-                                {status !== "visible" && (
-                                  <button className="field-control-btn" onClick={() => toggleFieldVisibility(day.id, key, hidden, unavailable, "restore")} style={{ background: "rgba(90,154,106,0.2)", color: "#8fcf9f" }}>
-                                    Ripristina
-                                  </button>
-                                )}
-                                {status !== "unavailable" && (
-                                  <button className="field-control-btn" onClick={() => toggleFieldVisibility(day.id, key, hidden, unavailable, "unavailable")} style={{ background: "rgba(192,160,80,0.2)", color: "#d8be7a" }}>
-                                    Non disponibile
-                                  </button>
-                                )}
-                                {status !== "hidden" && (
-                                  <button className="field-control-btn" onClick={() => toggleFieldVisibility(day.id, key, hidden, unavailable, "hide")} style={{ background: "rgba(180,70,70,0.2)", color: "#e09a9a" }}>
-                                    Nascondi
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
+                        <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+                          <input
+                            placeholder="Nuovo piatto..."
+                            value={newItemText[inputKey] || ""}
+                            onChange={(e) => setNewItemText((s) => ({ ...s, [inputKey]: e.target.value }))}
+                            onKeyDown={(e) => e.key === "Enter" && addItem(day.id, c.itemsKey, items)}
+                            style={{ fontSize: 12, padding: "7px 10px" }}
+                          />
+                          <button className="btn-ghost" style={{ fontSize: 11, padding: "7px 14px", whiteSpace: "nowrap" }} onClick={() => addItem(day.id, c.itemsKey, items)}>
+                            + Aggiungi
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    );
+                  })}
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         )}
       </main>
