@@ -49,6 +49,7 @@ export default function App() {
   const [showLogin, setShowLogin] = useState(false);
   const [newOrderCount, setNewOrderCount] = useState(0);
   const [newItemInputs, setNewItemInputs] = useState({});
+  const [expandedDays, setExpandedDays] = useState({});
   const initialLoadDone = useRef(false);
 
   useEffect(() => {
@@ -278,6 +279,15 @@ export default function App() {
     else newHidden.push(hideKey);
     await supabase.from("menu").update({ hidden_fields: newHidden }).eq("id", dayId);
     loadMenu();
+  }
+
+  function toggleDayExpanded(dayId) {
+    setExpandedDays((prev) => ({ ...prev, [dayId]: !isDayExpanded(dayId) }));
+  }
+
+  function isDayExpanded(dayId) {
+    const day = menu.find((d) => d.id === dayId);
+    return expandedDays[dayId] !== undefined ? expandedDays[dayId] : !!day?.is_today;
   }
 
   const today = menu.find((d) => d.is_today) || menu[0];
@@ -680,7 +690,10 @@ export default function App() {
             <h3 className="script-title" style={{ fontSize: 24, marginBottom: 4 }}>Gestione menù settimanale</h3>
             <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: "#7f9cb8", marginBottom: 16 }}>Aggiungi quanti piatti vuoi per ogni categoria, con prezzo, e segnali come non disponibili o eliminali.</p>
 
-            {menu.map((day) => (
+            {menu.map((day) => {
+              const expanded = isDayExpanded(day.id);
+              const totalItems = categories.reduce((s, c) => s + (day[c.itemsKey] || []).length, 0);
+              return (
               <div key={day.id} className="card" style={{ padding: "18px 20px", marginBottom: 14, borderLeft: `3px solid ${day.is_today ? "#fff" : "rgba(255,255,255,0.2)"}` }}>
                 {editingDay === day.id ? (
                   <div style={{ marginBottom: 16 }}>
@@ -701,12 +714,16 @@ export default function App() {
                     </div>
                   </div>
                 ) : (
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                  <div onClick={() => toggleDayExpanded(day.id)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: expanded ? 16 : 0, cursor: "pointer" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: "#7f9cb8", display: "inline-block", transform: expanded ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>▶</span>
                       <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: 16, color: "#fff" }}>{day.day} {day.date}</span>
                       {day.is_today && <span className="tag" style={{ background: "rgba(255,255,255,0.9)", color: "#1c3c5e", fontSize: 10 }}>Oggi</span>}
+                      {!expanded && (
+                        <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: "#5b7a9a" }}>{totalItems} {totalItems === 1 ? "piatto" : "piatti"}</span>
+                      )}
                     </div>
-                    <div style={{ display: "flex", gap: 8 }}>
+                    <div style={{ display: "flex", gap: 8 }} onClick={(e) => e.stopPropagation()}>
                       {!day.is_today && (
                         <button className="btn-ghost" style={{ fontSize: 11, padding: "6px 14px" }} onClick={() => setToday(day.id)}>Imposta oggi</button>
                       )}
@@ -716,6 +733,7 @@ export default function App() {
                 )}
 
                 {/* Categorie con liste di piatti */}
+                {expanded && (
                 <div className="admin-cat-grid" style={{ display: "grid" }}>
                   {categories.map((c) => {
                     const items = day[c.itemsKey] || [];
@@ -782,8 +800,10 @@ export default function App() {
                     );
                   })}
                 </div>
+                )}
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>
