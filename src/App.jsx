@@ -300,8 +300,8 @@ export default function App() {
       <header style={{ background: "#2c2c2c", padding: "0 32px" }}>
         <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: 60 }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
-            <h1 style={{ fontFamily: "'Playfair Display', serif", color: "#f5f0e8", fontSize: 22, fontWeight: 600 }}>La Mensa</h1>
-            <span style={{ color: "#888", fontSize: 12, letterSpacing: 1 }}>UFFICIO</span>
+            <h1 style={{ fontFamily: "'Playfair Display', serif", color: "#f5f0e8", fontSize: 22, fontWeight: 600 }}>EngineerEat</h1>
+<span style={{ color: "#888", fontSize: 12, letterSpacing: 1 }}>ORDINAZIONI</span>
           </div>
           <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
             {adminUser ? (
