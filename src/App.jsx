@@ -36,6 +36,7 @@ export default function App() {
   const [suspended, setSuspended] = useState(false);
   const [orderForm, setOrderForm] = useState({ name: "", note: "", selectedItems: [] });
   const [orderSent, setOrderSent] = useState(false);
+  const [lastOrderSummary, setLastOrderSummary] = useState(null);
   const [editingDay, setEditingDay] = useState(null);
   const [editForm, setEditForm] = useState({});
   const [activeDay, setActiveDay] = useState(0);
@@ -183,6 +184,16 @@ export default function App() {
 
   const orderTotal = orderForm.selectedItems.reduce((s, i) => s + Number(i.prezzo || 0), 0);
 
+  function isToday(dateStr) {
+    const d = new Date(dateStr);
+    const now = new Date();
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+  }
+
+  const nameAlreadyOrderedToday = orderForm.name.trim().length > 1 && orders.some(
+    (o) => isToday(o.created_at) && o.name.trim().toLowerCase() === orderForm.name.trim().toLowerCase()
+  );
+
   async function handleOrder() {
     if (!orderForm.name.trim()) return;
     if (orderForm.selectedItems.length === 0) return;
@@ -193,6 +204,7 @@ export default function App() {
       note: orderForm.note,
     }]);
     if (!error) {
+      setLastOrderSummary({ items: orderForm.selectedItems, total: orderTotal });
       setOrderSent(true);
       setOrderForm({ name: "", note: "", selectedItems: [] });
     }
@@ -481,7 +493,21 @@ export default function App() {
             ) : orderSent ? (
               <div className="fade-in" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.2)", padding: "24px", fontFamily: "'Poppins', sans-serif", textAlign: "center" }}>
                 <div style={{ fontSize: 17, fontWeight: 600, color: "#fff", marginBottom: 6 }}>Prenotazione inviata</div>
-                <div style={{ fontSize: 13, color: "#9bb8d3" }}>Il tuo ordine è stato ricevuto. Buon appetito!</div>
+                <div style={{ fontSize: 13, color: "#9bb8d3", marginBottom: 18 }}>Il tuo ordine è stato ricevuto. Buon appetito!</div>
+                {lastOrderSummary && lastOrderSummary.items.length > 0 && (
+                  <div style={{ textAlign: "left", background: "rgba(0,0,0,0.15)", padding: "14px 18px", marginBottom: 4 }}>
+                    {lastOrderSummary.items.map((it, idx) => (
+                      <div key={idx} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#fff", padding: "3px 0" }}>
+                        <span>{it.nome} <span style={{ color: "#7f9cb8", fontSize: 11 }}>({it.category})</span></span>
+                        <span style={{ color: "#9bb8d3" }}>{formatPrice(it.prezzo)}</span>
+                      </div>
+                    ))}
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "#fff", borderTop: "1px solid rgba(255,255,255,0.15)", marginTop: 8, paddingTop: 8 }}>
+                      <span>Totale</span>
+                      <span>{formatPrice(lastOrderSummary.total)}</span>
+                    </div>
+                  </div>
+                )}
                 <button className="btn-ghost" style={{ marginTop: 16, fontSize: 12 }} onClick={() => setOrderSent(false)}>Nuovo ordine</button>
               </div>
             ) : (
@@ -489,6 +515,11 @@ export default function App() {
                 <div style={{ marginBottom: 16 }}>
                   <label style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, letterSpacing: 1, color: "#9bb8d3", textTransform: "uppercase", display: "block", marginBottom: 6 }}>Nome e cognome *</label>
                   <input placeholder="Es. Marco Bianchi" value={orderForm.name} onChange={(e) => setOrderForm((f) => ({ ...f, name: e.target.value }))} style={{ maxWidth: 320 }} />
+                  {nameAlreadyOrderedToday && (
+                    <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: "#d8be7a", marginTop: 6 }}>
+                      ⚠ Risulta già un ordine oggi con questo nome. Se procedi, verrà aggiunto un secondo ordine.
+                    </div>
+                  )}
                 </div>
                 <div style={{ marginBottom: 16 }}>
                   <label style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, letterSpacing: 1, color: "#9bb8d3", textTransform: "uppercase", display: "block", marginBottom: 12 }}>Selezione *</label>
@@ -569,12 +600,39 @@ export default function App() {
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28 }}>
               <div>
                 <h2 className="script-title" style={{ fontSize: 32 }}>Pannello Admin</h2>
-                <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: "#7f9cb8", marginTop: 4 }}>{orders.length} ordini ricevuti oggi</p>
+                <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: "#7f9cb8", marginTop: 4 }}>{orders.filter((o) => isToday(o.created_at)).length} ordini ricevuti oggi</p>
               </div>
               <button onClick={toggleSuspended} style={{ padding: "10px 22px", fontFamily: "'Poppins', sans-serif", fontSize: 13, fontWeight: 500, cursor: "pointer", border: "none", background: suspended ? "rgba(80,150,80,0.85)" : "rgba(180,70,70,0.85)", color: "white", letterSpacing: 0.5, transition: "all 0.2s", borderRadius: 2 }}>
                 {suspended ? "Riapri ordinazioni" : "Sospendi ordinazioni"}
               </button>
             </div>
+
+            {(() => {
+              const todayOrders = orders.filter((o) => isToday(o.created_at));
+              const tally = {};
+              todayOrders.forEach((o) => {
+                (o.selected_items || []).forEach((it) => {
+                  const key = `${it.category}::${it.nome}`;
+                  tally[key] = (tally[key] || { category: it.category, nome: it.nome, count: 0 });
+                  tally[key].count += 1;
+                });
+              });
+              const tallyList = Object.values(tally).sort((a, b) => b.count - a.count);
+              if (tallyList.length === 0) return null;
+              return (
+                <div className="card" style={{ padding: "18px 22px", marginBottom: 24 }}>
+                  <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, fontWeight: 600, letterSpacing: 1.5, color: "#9bb8d3", textTransform: "uppercase", marginBottom: 12 }}>Riepilogo per la cucina — oggi</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "6px 18px" }}>
+                    {tallyList.map((t, idx) => (
+                      <div key={idx} style={{ display: "flex", justifyContent: "space-between", fontFamily: "'Poppins', sans-serif", fontSize: 13, color: "#fff", padding: "3px 0" }}>
+                        <span>{t.nome} <span style={{ color: "#7f9cb8", fontSize: 11 }}>({t.category})</span></span>
+                        <span style={{ fontWeight: 700, color: "#fff", marginLeft: 10 }}>× {t.count}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
 
             <h3 className="script-title" style={{ fontSize: 24, marginBottom: 14 }}>Ordini ricevuti</h3>
             {orders.length === 0 ? (
