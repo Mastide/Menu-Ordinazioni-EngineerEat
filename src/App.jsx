@@ -375,6 +375,10 @@ export default function App() {
         {/* CLIENT VIEW */}
         {view === "client" && today && (
           <div className="fade-in">
+            <div style={{ background: "rgba(192,160,80,0.12)", border: "1px solid rgba(192,160,80,0.3)", padding: "10px 18px", marginBottom: 28, textAlign: "center", fontFamily: "'Poppins', sans-serif", fontSize: 12, color: "#d8be7a" }}>
+              ⏰ Ordina entro le ore 12:00 per garantirti la disponibilità dei piatti
+            </div>
+
             <div style={{ textAlign: "center", marginBottom: 36 }}>
               <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, letterSpacing: 3, color: "#7f9cb8", textTransform: "uppercase" }}>
                 {today.day} · {today.date}
@@ -509,6 +513,9 @@ export default function App() {
                 <div style={{ marginBottom: 22 }}>
                   <label style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, letterSpacing: 1, color: "#9bb8d3", textTransform: "uppercase", display: "block", marginBottom: 6 }}>Note (facoltativo)</label>
                   <textarea placeholder="Allergie, intolleranze, preferenze..." value={orderForm.note} onChange={(e) => setOrderForm((f) => ({ ...f, note: e.target.value }))} style={{ resize: "vertical", minHeight: 70, maxWidth: 400 }} />
+                </div>
+                <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: "#7f9cb8", marginBottom: 14, fontStyle: "italic" }}>
+                  Ricorda: ordina entro le ore 12:00 per garantirti la disponibilità.
                 </div>
                 <button className="btn-primary" onClick={handleOrder} disabled={submitting}>
                   {submitting ? "Invio in corso..." : "Invia prenotazione"}
