@@ -508,15 +508,34 @@ export default function App() {
                               <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: "#7f9cb8", fontStyle: "italic", marginBottom: 8 }}>Seleziona un secondo per poter scegliere il contorno</div>
                             )}
                             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                              {avail.map((it) => (
-                                <label key={it.nome} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: locked ? "not-allowed" : "pointer", fontFamily: "'Poppins', sans-serif", fontSize: 14, opacity: locked ? 0.4 : 1 }}>
-                                  <span style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                                    <input type="checkbox" checked={isSelected(c.label, it.nome)} disabled={locked} onChange={() => toggleSelectItem(c.label, it.nome, it.prezzo)} />
-                                    <span style={{ fontWeight: 500, color: "#fff" }}>{it.nome}</span>
-                                  </span>
-                                  <span style={{ color: "#9bb8d3", fontSize: 13 }}>{formatPrice(it.prezzo)}</span>
-                                </label>
-                              ))}
+                              {avail.map((it) => {
+                                const checked = isSelected(c.label, it.nome);
+                                return (
+                                  <div
+                                    key={it.nome}
+                                    onClick={() => !locked && toggleSelectItem(c.label, it.nome, it.prezzo)}
+                                    style={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: locked ? "not-allowed" : "pointer", fontFamily: "'Poppins', sans-serif", fontSize: 14, opacity: locked ? 0.4 : 1 }}
+                                  >
+                                    <span style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                                      <span style={{
+                                        width: 20, height: 20, borderRadius: 4, flexShrink: 0,
+                                        border: `1.5px solid ${checked ? "#fff" : "rgba(255,255,255,0.45)"}`,
+                                        background: checked ? "#fff" : "transparent",
+                                        display: "flex", alignItems: "center", justifyContent: "center",
+                                        transition: "all 0.15s",
+                                      }}>
+                                        {checked && (
+                                          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                                            <path d="M2 6.2L4.8 9L10 3" stroke="#1c3c5e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                          </svg>
+                                        )}
+                                      </span>
+                                      <span style={{ fontWeight: 500, color: "#fff" }}>{it.nome}</span>
+                                    </span>
+                                    <span style={{ color: "#9bb8d3", fontSize: 13 }}>{formatPrice(it.prezzo)}</span>
+                                  </div>
+                                );
+                              })}
                             </div>
                           </div>
                         );
