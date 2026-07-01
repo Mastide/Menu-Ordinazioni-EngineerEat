@@ -323,11 +323,11 @@ export default function App() {
   }
 
   return (
-    <div style={{ fontFamily: "'Antonio', sans-serif", minHeight: "100vh", background: "url('/fonts/Sfondo_Bar-100.jpg') center center / cover fixed" }}>
+    <div style={{ fontFamily: "'Antonio', sans-serif", minHeight: "100vh", background: "url('/fonts/Sfondo%20Bar-100.jpg') center center / cover fixed" }}>
       <style>{`
         @font-face {
           font-family: 'Antonio';
-          src: url('/fonts/ANTONIO-VARIABLEFONT_WGHT.TTF') format('truetype');
+          src: url('/fonts/ANTONIO-VARIABLEFONT_WGHT__2_.TTF') format('truetype');
           font-weight: 100 900;
           font-style: normal;
         }
@@ -338,8 +338,8 @@ export default function App() {
           font-style: normal;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: url('/fonts/Sfondo_Bar-100.jpg') center center / cover fixed; }
-        .app-overlay { min-height: 100vh; background: rgba(18, 44, 72, 0.82); }
+        body { background: url('/fonts/Sfondo%20Bar-100.jpg') center center / cover fixed; }
+        .app-overlay { min-height: 100vh; background: rgba(10, 40, 90, 0.45); }
         .fade-in { animation: fadeIn 0.4s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         .btn-primary { background: #ffffff; color: #1c3c5e; border: none; padding: 13px 28px; font-family: 'Antonio', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; letter-spacing: 0.5px; transition: all 0.2s; border-radius: 2px; }
