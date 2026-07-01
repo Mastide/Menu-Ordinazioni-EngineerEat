@@ -323,22 +323,22 @@ export default function App() {
   }
 
   return (
-    <div style={{ fontFamily: "'Antonio', sans-serif", minHeight: "100vh", background: "url('/fonts/Sfondo%20Bar-100.jpg') center center / cover fixed" }}>
+    <div style={{ fontFamily: "'Antonio', sans-serif", minHeight: "100vh", background: "url('/fonts/Sfondo.jpg') center center / cover fixed" }}>
       <style>{`
         @font-face {
           font-family: 'Antonio';
-          src: url('/fonts/ANTONIO-VARIABLEFONT_WGHT%20(2).TTF') format('truetype');
+          src: url('/fonts/Antonio.TTF') format('truetype');
           font-weight: 100 900;
           font-style: normal;
         }
         @font-face {
           font-family: 'Nickainley';
-          src: url('/fonts/NICKAINLEY-NORMALOTF') format('opentype');
+          src: url('/fonts/Nickainley.OTF') format('opentype');
           font-weight: normal;
           font-style: normal;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: url('/fonts/Sfondo%20Bar-100.jpg') center center / cover fixed; }
+        body { background: url('/fonts/Sfondo.jpg') center center / cover fixed; }
         .app-overlay { min-height: 100vh; background: rgba(12, 35, 75, 0.72); }
         .fade-in { animation: fadeIn 0.4s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
