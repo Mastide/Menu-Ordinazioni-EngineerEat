@@ -339,7 +339,6 @@ export default function App() {
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { background: url('/Sfondo.jpg') center center / cover fixed; }
-        .app-overlay { min-height: 100vh; background: rgba(12, 35, 75, 0.72); }
         .fade-in { animation: fadeIn 0.4s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         .btn-primary { background: #ffffff; color: #1c3c5e; border: none; padding: 13px 28px; font-family: 'Antonio', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; letter-spacing: 0.5px; transition: all 0.2s; border-radius: 2px; }
@@ -387,8 +386,6 @@ export default function App() {
           .order-card-padding { padding: 20px 18px !important; }
         }
       `}</style>
-
-      <div className="app-overlay">
 
       {/* Login modal */}
       {showLogin && (
@@ -871,7 +868,6 @@ export default function App() {
           </div>
         )}
       </main>
-      </div>
     </div>
   );
 }
