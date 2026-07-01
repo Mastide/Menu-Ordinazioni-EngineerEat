@@ -610,7 +610,7 @@ export default function App() {
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28 }}>
               <div>
                 <h2 className="script-title" style={{ fontSize: 32 }}>Pannello Admin</h2>
-                <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: "#7f9cb8", marginTop: 4 }}>{orders.filter((o) => isToday(o.created_at)).length} ordini ricevuti oggi</p>
+                <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: "#7f9cb8", marginTop: 4 }}>{orders.length} ordini ricevuti</p>
               </div>
               <button onClick={toggleSuspended} style={{ padding: "10px 22px", fontFamily: "'Poppins', sans-serif", fontSize: 13, fontWeight: 500, cursor: "pointer", border: "none", background: suspended ? "rgba(80,150,80,0.85)" : "rgba(180,70,70,0.85)", color: "white", letterSpacing: 0.5, transition: "all 0.2s", borderRadius: 2 }}>
                 {suspended ? "Riapri ordinazioni" : "Sospendi ordinazioni"}
@@ -618,7 +618,7 @@ export default function App() {
             </div>
 
             {(() => {
-              const todayOrders = orders.filter((o) => isToday(o.created_at));
+              const todayOrders = orders;
               const tally = {};
               todayOrders.forEach((o) => {
                 (o.selected_items || []).forEach((it) => {
