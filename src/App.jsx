@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { Analytics } from "@vercel/analytics/react";
 import { supabase } from "./supabase.js";
 
 const categories = [
@@ -807,6 +808,7 @@ export default function App() {
           </div>
         )}
       </main>
+      <Analytics />
     </div>
   );
 }
