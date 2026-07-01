@@ -50,6 +50,7 @@ export default function App() {
   const [newOrderCount, setNewOrderCount] = useState(0);
   const [newItemInputs, setNewItemInputs] = useState({});
   const [expandedDays, setExpandedDays] = useState({});
+  const [editingItem, setEditingItem] = useState(null); // { dayId, itemsKey, index, nome, prezzo }
   const initialLoadDone = useRef(false);
 
   useEffect(() => {
@@ -270,6 +271,15 @@ export default function App() {
     const prezzo = parseFloat((newPrezzo || "0").toString().replace(",", ".")) || 0;
     const newItems = currentItems.map((it, i) => i === index ? { ...it, prezzo } : it);
     await supabase.from("menu").update({ [itemsKey]: newItems }).eq("id", dayId);
+    loadMenu();
+  }
+
+  async function saveItemEdit(dayId, itemsKey, currentItems, index) {
+    if (!editingItem) return;
+    const prezzo = parseFloat((editingItem.prezzo || "0").toString().replace(",", ".")) || 0;
+    const newItems = currentItems.map((it, i) => i === index ? { ...it, nome: editingItem.nome, prezzo } : it);
+    await supabase.from("menu").update({ [itemsKey]: newItems }).eq("id", dayId);
+    setEditingItem(null);
     loadMenu();
   }
 
@@ -753,20 +763,45 @@ export default function App() {
                           <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: "#5b7a9a", fontStyle: "italic", marginBottom: 8 }}>Nessun piatto inserito</div>
                         )}
 
-                        {items.map((it, idx) => (
-                          <div key={idx} className="item-row">
-                            <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: it.unavailable ? "#6b7d8e" : "#fff", textDecoration: it.unavailable ? "line-through" : "none", flex: 1 }}>
-                              {it.nome}
-                            </span>
-                            <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: "#7f9cb8" }}>€</span>
-                            <input
-                              type="text"
-                              inputMode="decimal"
-                              className="price-input"
-                              defaultValue={Number(it.prezzo || 0).toFixed(2)}
-                              onBlur={(e) => updateItemPrice(day.id, c.itemsKey, items, idx, e.target.value)}
-                            />
+                        {items.map((it, idx) => {
+                          const isEditingThis = editingItem?.dayId === day.id && editingItem?.itemsKey === c.itemsKey && editingItem?.index === idx;
+                          return isEditingThis ? (
+                            <div key={idx} className="item-row" style={{ flexWrap: "wrap", gap: 6 }}>
+                              <input
+                                value={editingItem.nome}
+                                onChange={(e) => setEditingItem((s) => ({ ...s, nome: e.target.value }))}
+                                style={{ fontSize: 13, padding: "5px 8px", flex: 2, minWidth: 120 }}
+                                autoFocus
+                              />
+                              <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: "#7f9cb8" }}>€</span>
+                              <input
+                                value={editingItem.prezzo}
+                                onChange={(e) => setEditingItem((s) => ({ ...s, prezzo: e.target.value }))}
+                                onKeyDown={(e) => e.key === "Enter" && saveItemEdit(day.id, c.itemsKey, items, idx)}
+                                style={{ fontSize: 13, padding: "5px 8px", width: 64, textAlign: "right" }}
+                              />
+                              <div style={{ display: "flex", gap: 4 }}>
+                                <button className="field-control-btn" onClick={() => saveItemEdit(day.id, c.itemsKey, items, idx)} style={{ background: "rgba(90,154,106,0.2)", color: "#8fcf9f" }}>Salva</button>
+                                <button className="field-control-btn" onClick={() => setEditingItem(null)} style={{ background: "rgba(255,255,255,0.08)", color: "#9bb8d3" }}>Annulla</button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div key={idx} className="item-row">
+                              <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: it.unavailable ? "#6b7d8e" : "#fff", textDecoration: it.unavailable ? "line-through" : "none", flex: 1 }}>
+                                {it.nome}
+                              </span>
+                              <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: "#7f9cb8" }}>€</span>
+                              <input
+                                type="text"
+                                inputMode="decimal"
+                                className="price-input"
+                                defaultValue={Number(it.prezzo || 0).toFixed(2)}
+                                onBlur={(e) => updateItemPrice(day.id, c.itemsKey, items, idx, e.target.value)}
+                              />
                             <div style={{ display: "flex", gap: 4 }}>
+                              <button className="field-control-btn" onClick={() => setEditingItem({ dayId: day.id, itemsKey: c.itemsKey, index: idx, nome: it.nome, prezzo: Number(it.prezzo || 0).toFixed(2) })} style={{ background: "rgba(255,255,255,0.08)", color: "#9bb8d3" }}>
+                                Modifica
+                              </button>
                               <button className="field-control-btn" onClick={() => toggleItemUnavailable(day.id, c.itemsKey, items, idx)} style={{ background: it.unavailable ? "rgba(90,154,106,0.2)" : "rgba(192,160,80,0.2)", color: it.unavailable ? "#8fcf9f" : "#d8be7a" }}>
                                 {it.unavailable ? "Disponibile" : "Esaurito"}
                               </button>
@@ -775,7 +810,8 @@ export default function App() {
                               </button>
                             </div>
                           </div>
-                        ))}
+                          );
+                        })}
 
                         <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
                           <input
